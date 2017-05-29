@@ -1,7 +1,7 @@
 {{formatedName}}
 ================
 
-![Project Status : experimental](https://img.shields.io/badge/Project%20status-experimental-orange.svg)
+![Project Status : {{{projectStatus}}}](https://img.shields.io/badge/Project%20status-{{{projectStatus}}}-{{{projectStatusColor}}}.svg)
 
 ![Branch : {{{currentBranch}}}](https://img.shields.io/badge/Branch-{{{currentBranch}}}-blue.svg)
 [![version](https://img.shields.io/badge/version-{{{version}}}-blue.svg)]({{{homepage}}})
