@@ -1,11 +1,21 @@
-- section: Section Name
-- title: Title
-- subtitle: Subtitle
-- p: >
-    paragraph content
-- js: >
-    // javascript code
+- section: Install
 - cli: >
-    // cli code
-- li: list element
+    npm i files-generator
+- section: Basic usage
+- js: >
+    const generate = require('files-generator')
+
+
+    generate({
+      'path/to/file': 'file-content',
+      'path/to/file2': generate.copy('path/to/original/file'),
+      'path/to/file3': new Promise(resolve => resolve('async-file-content')) 
+    }).then(generatedFiles => {
+      console.log(generatedFiles)
+      // {
+      //    'path/to/file': 'file-content',
+      //    'path/to/file2': 'original-file-content',
+      //    'path/to/file3': 'async-file-content'
+      // }
+    })
 - section: Documentation

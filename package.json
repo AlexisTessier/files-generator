@@ -38,7 +38,7 @@
   ],
   "author": {
     "name": "Alexis Tessier",
-    "email": "alexistessierdev@gamil.com",
+    "email": "alexistessierdev@gmail.com",
     "github": "https://github.com/AlexisTessier",
     "npm": "https://www.npmjs.com/~alexistessier",
     "login": {
@@ -84,8 +84,10 @@
     "nyc": "^10.2.0",
     "oss-license-name-to-url": "^1.2.1",
     "read-yaml": "^1.1.0",
+    "recursive-copy": "^2.0.6",
     "serve-here": "^3.2.0",
-    "shelljs": "^0.7.7"
+    "shelljs": "^0.7.7",
+    "temp": "^0.8.3"
   },
   "ava": {
     "source": [
