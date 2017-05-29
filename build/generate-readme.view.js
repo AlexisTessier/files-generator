@@ -12,20 +12,22 @@ const git = require('git-repo-info')();
 
 /*--------------*/
 
-const projectStatus = pkg.projectStatus || 'draft';
+const status = pkg.status || 'draft';
 
 const view = Object.assign({}, pkg, {
 	formatedName: capitalize.words(pkg.name.replace(/\-/g, ' ')),
 	content: require('./documentation-introduction.js'),
 	currentBranch: git.branch,
 	licenseUrl: licenseUrl(pkg.license),
-	projectStatus,
-	projectStatusColor: ({
-		draft: 'lightgrey',
-		experimental: 'orange',
-		ready: 'green',
-		ok: 'brightgreen'
-	})[projectStatus] || 'lightgrey'
+	status : {
+		label: status,
+		color: ({
+			draft: 'lightgrey',
+			experimental: 'orange',
+			ready: 'green',
+			ok: 'brightgreen'
+		})[status] || 'lightgrey'
+	}
 });
 
 /*--------------*/
