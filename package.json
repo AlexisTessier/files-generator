@@ -102,7 +102,8 @@
     ]
   },
   "dependencies": {
-    "better-assert": "^1.0.2"
+    "better-assert": "^1.0.2",
+    "is-stream": "^1.1.0"
   },
   "optionalDependencies": {
     "ttab": "^0.5.1"
