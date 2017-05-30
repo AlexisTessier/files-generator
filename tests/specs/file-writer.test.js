@@ -46,11 +46,63 @@ test('instanciation using copy and methods', t => {
 	assert.equal(typeof fileWriter.writeTo, 'function');
 });
 
-test.skip('writeTo using write', t => {
+test('writeTo using write', t => {
+	const FileWriter = requireFromIndex('sources/file-writer');
+
+	const writer = new FileWriter({write: 'file-content'})
+
+	t.plan(1);
+	return createMockDirectory('write-to-using-write').then(directory => {
+		const writeToPromise = writer.writeTo(directory.join('file-name.txt'));
+
+		assert(writeToPromise instanceof Promise);
+
+		return writeToPromise.then(()=>{
+			return directory.assertAllFilesExist([{
+				path: 'file-name.txt',
+				content: 'file-content'
+			}]).then(()=>{t.pass()})
+		});
+	});
+});
+
+test.skip('writeTo and callback using write', t => {
 	const FileWriter = requireFromIndex('sources/file-writer');
 });
 
+
+test.skip('writeTo using write with a Buffer', t => {
+	const FileWriter = requireFromIndex('sources/file-writer');
+
+	const writer = new FileWriter({write: 'content'})
+
+	t.plan(1);
+	createMockDirectory('write-to-using-write').then(directory => {
+		t.pass();
+
+
+	});
+});
+
+test.skip('writeTo using write with a Stream', t => {
+	const FileWriter = requireFromIndex('sources/file-writer');
+
+	const writer = new FileWriter({write: 'content'})
+
+	t.plan(1);
+	createMockDirectory('write-to-using-write').then(directory => {
+		t.pass();
+
+
+	});
+});
+
 test.skip('writeTo using copy', t => {
+	const FileWriter = requireFromIndex('sources/file-writer');
+});
+
+
+test.skip('writeTo and callback using copy', t => {
 	const FileWriter = requireFromIndex('sources/file-writer');
 });
 

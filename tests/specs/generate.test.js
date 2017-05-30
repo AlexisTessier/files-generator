@@ -21,8 +21,6 @@ test.skip('generate from an instance of FileWriter', t => {
 	t.plan(1);
 	return createMockDirectory('generate-from-instanceof-file-writer').then(directory => {
 		t.pass();
-
-
 		console.log(directory)
 	});
 });
