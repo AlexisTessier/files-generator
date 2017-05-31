@@ -34,7 +34,7 @@ test('generate from an instance of FileWriter', t => {
 				path: 'file-from-file-writer.txt',
 				content: 'file-content-from-file-writer'
 			}]).then(()=>{t.pass()})
-		})
+		});
 	});
 });
 
@@ -51,4 +51,46 @@ test.skip('generate from an empty object of instance of FileWriter', t => {
 });
 
 test.skip('generate from an empty object of instance of FileWriter - callback style', t => {
+});
+
+test.skip('generate from an Array of generate config', t => {
+});
+
+test.skip('generate from an Array of generate config - callback style', t => {
+});
+
+test.skip('generate from a string', t => {
+});
+
+test.skip('generate from a string - callback style', t => {
+});
+
+test.skip('generate from a buffer', t => {
+});
+
+test.skip('generate from a buffer - callback style', t => {
+});
+
+test.skip('generate from a stream', t => {
+});
+
+test.skip('generate from a stream - callback style', t => {
+});
+
+test.skip('generate nested files', t => {
+});
+
+test.skip('generate nested files - callback style', t => {
+});
+
+test.skip('generate from a Promise resolving an instance of FileWriter', t => {
+});
+
+test.skip('generate from a Promise resolving an instance of FileWriter - callback style', t => {
+});
+
+test.skip('generate from a function and resolving an instance of FileWriter', t => {
+});
+
+test.skip('generate from a function and an instance of FileWriter - callback style', t => {
 });

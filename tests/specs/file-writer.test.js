@@ -319,12 +319,28 @@ test.cb('writeTo using write with a Promise resolving a stream - callback style'
 	});
 });
 
-test.skip('writeTo using write with a failing Promise', t => {
+test('writeTo using write with a failing Promise', t => {
 	const FileWriter = requireFromIndex('sources/file-writer');
 
 	const writer = new FileWriter({
-		write: new Promise(resolve)
-	})
+		write: new Promise((resolve, reject) => setTimeout(()=>reject(new Error('promise error')), 50))
+	});
+
+	t.plan(1);
+	return createMockDirectory('write-to-using-write-with-a-failing-promise', 'must-be-preserved').then(directory => {
+		const writeToPromise = writer.writeTo(directory.join('must-be-preserved.txt'));
+
+		assert(writeToPromise instanceof Promise);
+
+		return writeToPromise.then(()=>t.fail()).catch(err=>{
+			assert.equal(err.message, `Error getting the content of "${directory.join('must-be-preserved.txt')}" => promise error`);
+
+			return directory.assertAllFilesExist([{
+				path: 'must-be-preserved.txt',
+				content: 'must-be-preserved'
+			}]).then(()=>{t.pass();})
+		});
+	});
 });
 
 test.skip('writeTo using write with a failing Promise - callback style', t => {

@@ -1,7 +1,12 @@
 {{formatedName}}
 ================
 
-![Project Status : {{{status.label}}}](https://img.shields.io/badge/Project%20status-{{{status.label}}}-{{{status.color}}}.svg)
+{{#stability}}
+[![{{{stability}}}](http://badges.github.io/stability-badges/dist/{{{stability}}}.svg)](http://github.com/badges/stability-badges)
+{{/stability}}
+{{^stability}}
+![draft](https://img.shields.io/badge/stability-draft-lightgrey.svg?style=flat-square)
+{{/stability}}
 
 ![Branch : {{{currentBranch}}}](https://img.shields.io/badge/Branch-{{{currentBranch}}}-blue.svg)
 [![version](https://img.shields.io/badge/version-{{{version}}}-blue.svg)]({{{homepage}}})

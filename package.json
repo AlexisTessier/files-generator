@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "A tool to generate bunch of files, using different kinds of content definition",
   "main": "index.js",
-  "status": "draft",
   "directories": {
     "test": "tests"
   },

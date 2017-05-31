@@ -47,6 +47,8 @@ module.exports = class FileWriter{
 					});
 
 					asyncWriter.writeTo(destinationPath, callback);
+				}).catch(err => {
+					callback(new Error(`Error getting the content of "${destinationPath}" => ${err.message}`))
 				});
 			}
 			else if (isStream(content)) {
@@ -66,7 +68,7 @@ module.exports = class FileWriter{
 		}
 
 		if (typeof callback !== 'function') {
-			return new Promise(resolve => {
+			return new Promise((resolve, reject) => {
 				callback = err => err ? reject(err) : resolve()
 			});
 		}

@@ -1,6 +1,6 @@
 # Files Generator
 
-![Project Status : draft](https://img.shields.io/badge/Project%20status-draft-lightgrey.svg)
+![draft](https://img.shields.io/badge/stability-draft-lightgrey.svg?style=flat-square)
 
 ![Branch : master](https://img.shields.io/badge/Branch-master-blue.svg)
 [![version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/AlexisTessier/files-generator#readme)
