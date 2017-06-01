@@ -6,6 +6,13 @@ const test = require('ava');
 const fs = require('fs');
 const path = require('path');
 
+const stream = require('stream');
+const WritableStream = stream.Writable;
+const ReadableStream = stream.Readable;
+
+const dashify = require('dashify');
+const intoStream = require('into-stream');
+
 const requireFromIndex = require('../utils/require-from-index');
 
 const createMockDirectory = require('../utils/create-mock-directory');
@@ -59,265 +66,204 @@ test('instanciation using copy with a non absolute path', t => {
 	});
 });
 
-test('writeTo using write', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
+const writerPossibilities = [
+	{ write: 'string' },
+	{ write: 'buffer' },
+	{ write: 'stream' },
+	{ write: 'promise resolving string' },
+	{ write: 'promise resolving buffer' },
+	{ write: 'promise resolving stream' },
+	{ write: 'promise resolving function resolving string' },
+	{ write: 'promise resolving function resolving buffer' },
+	{ write: 'promise resolving function resolving stream' },
+	{ write: 'promise resolving promise resolving string' },
+	{ write: 'promise resolving promise resolving buffer' },
+	{ write: 'promise resolving promise resolving stream' },
+	{ write: 'promise resolving promise resolving function resolving string' },
+	{ write: 'promise resolving promise resolving function resolving buffer' },
+	{ write: 'promise resolving promise resolving function resolving stream' },
+	{ write: 'function resolving string' },
+	{ write: 'function resolving buffer' },
+	{ write: 'function resolving stream' },
+	{ write: 'function resolving promise resolving string' },
+	{ write: 'function resolving promise resolving buffer' },
+	{ write: 'function resolving promise resolving stream' },
+	{ write: 'function resolving function resolving string' },
+	{ write: 'function resolving function resolving buffer' },
+	{ write: 'function resolving function resolving stream' },
+	{ write: 'function resolving promise resolving function resolving string' },
+	{ write: 'function resolving promise resolving function resolving buffer' },
+	{ write: 'function resolving promise resolving function resolving stream' },
+	{ copy: 'path' },
+	{ copy: 'promise resolving path' },
+	{ copy: 'promise resolving function resolving path' },
+	{ copy: 'promise resolving promise resolving path' },
+	{ copy: 'function resolving path' },
+	{ copy: 'function resolving promise resolving path' },
+	{ copy: 'function resolving function resolving path' }
+]
 
-	const writer = new FileWriter({write: 'file-content'})
+writerPossibilities.forEach(possibility => {
+	const exploded = (possibility.write || possibility.copy).split(' ');
+	const last = exploded[exploded.length - 1];
 
-	t.plan(1);
-	return createMockDirectory('write-to-using-write').then(directory => {
-		const writeToPromise = writer.writeTo(directory.join('file-name.txt'));
+	if (last === 'string' || last === 'buffer') {
+		possibility.dependencies = ['fs.writeFile'];
+	}
 
-		assert(writeToPromise instanceof Promise);
+	if (last === 'stream') {
+		possibility.dependencies = ['fs.createWriteStream'];
+	}
 
-		return writeToPromise.then(()=>{
-			return directory.assertAllFilesExist([{
-				path: 'file-name.txt',
-				content: 'file-content'
-			}]).then(()=>{t.pass()})
-		});
-	});
+	if (last === 'path') {
+		possibility.dependencies = ['fs.createReadStream', 'fs.createWriteStream'];
+	}
 });
 
-test.cb('writeTo using write - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
+let possibilityTestIdentifierCount = 0;
+function possibilityTestIdentifier() {
+	return '_'+(possibilityTestIdentifierCount++);
+}
 
-	const writer = new FileWriter({write: 'file-content'});
+function getWriteValue(writeType, stringContent, filePath) {
+	writeType = writeType.trim();
 
-	t.plan(1);
-	createMockDirectory('write-to-using-write-callback-style').then(directory => {
-		const writeToResult = writer.writeTo(directory.join('file-name.txt'), err => {
-			assert(!err);
+	if(writeType === 'string'){
+		return stringContent;
+	}
 
-			directory.assertAllFilesExist([{
-				path: 'file-name.txt',
-				content: 'file-content'
-			}]).then(()=>{t.pass();t.end()})
-		});
+	if (writeType === 'path') {
+		return filePath;
+	}
 
-		assert.equal(writeToResult, null);
-	});
-});
+	if(writeType === 'buffer'){
+		return Buffer.from(stringContent);
+	}
 
-test('writeTo using write with a Buffer', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
+	if(writeType === 'stream'){
+		return intoStream(stringContent);
+	}
 
-	const writer = new FileWriter({write: Buffer.from('buffer-file-content')})
+	if (writeType.indexOf('promise resolving') === 0) {
+		const resolveValue = getWriteValue(writeType.replace('promise resolving', ''), stringContent, filePath);
+		return new Promise(resolve => setTimeout(()=>resolve(resolveValue), 50));
+	}
 
-	t.plan(1);
-	return createMockDirectory('write-to-using-write-with-a-buffer').then(directory => {
-		const writeToPromise = writer.writeTo(directory.join('buffer-file-name.txt'));
+	if (writeType.indexOf('function resolving') === 0) {
+		const resolveValue = getWriteValue(writeType.replace('function resolving', ''), stringContent, filePath);
+		return callback => {
+			setTimeout(()=>{
+				callback(null, resolveValue)
+			}, 50);
+		}
+	}
 
-		assert(writeToPromise instanceof Promise);
+	throw new Error(`unhandled writeType "${writeType}" for content "${stringContent}"`);
+}
 
-		return writeToPromise.then(()=>{
-			return directory.assertAllFilesExist([{
-				path: 'buffer-file-name.txt',
-				content: 'buffer-file-content'
-			}]).then(()=>{t.pass()})
-		});
-	});
-});
+function getCopyValue(copyType, stringContent, callback) {
+	createMockDirectory(dashify(stringContent)).then(directory => {
+		const originalPath = directory.join(`${dashify(copyType+stringContent)}.txt`);
 
-test.cb('writeTo using write with a Buffer - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
+		fs.writeFile(originalPath, stringContent, {encoding: 'utf-8'}, err => {
+			if (err) {callback(err);return;}
 
-	const writer = new FileWriter({write: Buffer.from('buffer-file-content')})
+			copyType = copyType.trim();
 
-	t.plan(1);
-	createMockDirectory('write-to-using-write-with-a-buffer-callback-style').then(directory => {
-		const writeToResult = writer.writeTo(directory.join('buffer-file-name.txt'), err => {
-			assert(!err);
+			if(copyType === 'path'){
+				callback(null, originalPath);return;
+			}
 
-			directory.assertAllFilesExist([{
-				path: 'buffer-file-name.txt',
-				content: 'buffer-file-content'
-			}]).then(()=>{t.pass();t.end()})
-		});
+			if (copyType.indexOf('promise resolving') === 0) {
+				getCopyValue(copyType.replace('promise resolving', ''), stringContent, (err, resolveValue) => {
+					if (err) {callback(err);return;}
+					callback(null, new Promise(_resolve => setTimeout(()=>_resolve(resolveValue), 50)));
+				});return;
+			}
 
-		assert.equal(writeToResult, null);
-	});
-});
+			if (copyType.indexOf('function resolving') === 0) {
+				getCopyValue(copyType.replace('function resolving', ''), stringContent, (err, resolveValue) => {
+					if (err) {callback(err);return;}
+					callback(null, cb => {
+						setTimeout(()=>{
+							cb(null, resolveValue)
+						}, 50);
+					});
+				});
+				return;
+			}
 
-test('writeTo using write with a Stream', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-
-	const writer = new FileWriter({
-		write: fs.createReadStream(path.join(__dirname, '../mocks/write-to-using-write-with-a-stream.txt'))
-	});
-
-	t.plan(1);
-	return createMockDirectory('write-to-using-write-with-a-stream').then(directory => {
-		const writeToPromise = writer.writeTo(directory.join('stream-file-name.txt'));
-
-		assert(writeToPromise instanceof Promise);
-
-		return writeToPromise.then(()=>{
-			return directory.assertAllFilesExist([{
-				path: 'stream-file-name.txt',
-				content: 'write-to-using-write-with-a-stream-file-content'
-			}]).then(()=>{t.pass()})
+			reject(new Error(`unhandled copyType "${copyType}" for content "${stringContent}"`));
 		});
 	});
-});
+}
 
-test.cb('writeTo using write with a Stream - callback style', t => {
+function testWriteToPossibilities(possibilities){
 	const FileWriter = requireFromIndex('sources/file-writer');
 
-	const writer = new FileWriter({
-		write: fs.createReadStream(path.join(__dirname, '../mocks/write-to-using-write-with-a-stream.txt'))
-	});
+	possibilities.forEach(({
+		write = null,
+		copy = null
+	}) => {
+		if ((!write && !copy) || !!write === !!copy) {
+			throw new Error('Please provide a write value or a copy value');
+		}
 
-	t.plan(1);
-	createMockDirectory('write-to-using-write-with-a-stream-callback-style').then(directory => {
-		const writeToResult = writer.writeTo(directory.join('stream-file-name.txt'), err => {
-			assert(!err);
+		function getWriterOptions(expectedContent, callback) {
+			write ? callback({ write: getWriteValue(write, expectedContent) }) : getCopyValue(copy, expectedContent, (err, original) => {
+				if (err) {throw err;}
+				callback({ copy : original })
+			});
+		}
+		
+		function writeToTest(title, testCallback){
+			test.cb(title, t => {
+				const id = possibilityTestIdentifier();
+				const expectedFile = `${dashify(title)}.txt`;
+				const expectedContent = `${id} => ${title} -- file content`;
 
-			directory.assertAllFilesExist([{
-				path: 'stream-file-name.txt',
-				content: 'write-to-using-write-with-a-stream-file-content'
-			}]).then(()=>{t.pass();t.end()})
+				getWriterOptions(expectedContent, writerOptions => {
+					const writer = new FileWriter(writerOptions);
+
+					t.plan(1);
+					createMockDirectory(title).then(directory => {
+						testCallback(directory, writer, expectedFile, expectedContent, t);
+					});
+				});
+			});
+		}
+
+		const title_promise = `writeTo using ${write ? 'write' : 'copy'} with ${write || copy}`;
+		writeToTest(title_promise, (directory, writer, expectedFile, expectedContent, t) => {
+			const writeToPromise = writer.writeTo(directory.join(expectedFile));
+
+			assert(writeToPromise instanceof Promise);
+
+			writeToPromise.then(()=>{
+				directory.assertAllFilesExist([{
+					path: expectedFile,
+					content: expectedContent
+				}]).then(()=>{t.pass();t.end()});
+			});
 		});
 
-		assert.equal(writeToResult, null);
-	});
-});
+		const title_cb = `${title_promise} - callback style`;
+		writeToTest(title_cb, (directory, writer, expectedFile, expectedContent, t) => {
+			const writeToResult = writer.writeTo(directory.join(expectedFile), err => {
+				assert(!err);
 
-test('writeTo using write with a Promise resolving a string', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
+				directory.assertAllFilesExist([{
+					path: expectedFile,
+					content: expectedContent
+				}]).then(()=>{t.pass();t.end()});
+			});
 
-	const writer = new FileWriter({
-		write: new Promise(resolve => setTimeout(()=>resolve('file-content-from-promise'), 50))
-	});
-
-	t.plan(1);
-	return createMockDirectory('write-to-using-write-with-a-promise-resolving-a-string').then(directory => {
-		const writeToPromise = writer.writeTo(directory.join('string-from-promise-file-name.txt'));
-
-		assert(writeToPromise instanceof Promise);
-
-		return writeToPromise.then(()=>{
-			return directory.assertAllFilesExist([{
-				path: 'string-from-promise-file-name.txt',
-				content: 'file-content-from-promise'
-			}]).then(()=>{t.pass()})
+			assert.equal(writeToResult, null);
 		});
 	});
-});
+}
 
-test.cb('writeTo using write with a Promise resolving a string - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-
-	const writer = new FileWriter({
-		write: new Promise(resolve => setTimeout(()=>resolve('file-content-from-promise-callback-style'), 50))
-	});
-
-	t.plan(1);
-	createMockDirectory('write-to-using-write-with-a-promise-resolving-a-string-callback-style').then(directory => {
-		const writeToResult = writer.writeTo(directory.join('string-from-promise-callback-style-file-name.txt'), err => {
-			assert(!err);
-
-			directory.assertAllFilesExist([{
-				path: 'string-from-promise-callback-style-file-name.txt',
-				content: 'file-content-from-promise-callback-style'
-			}]).then(()=>{t.pass();t.end()})
-		});
-
-		assert.equal(writeToResult, null);
-	});
-});
-
-test('writeTo using write with a Promise resolving a buffer', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-
-	const writer = new FileWriter({
-		write: new Promise(resolve => setTimeout(()=>resolve(Buffer.from('file-content-from-promise-resolving-buffer')), 50))
-	});
-
-	t.plan(1);
-	return createMockDirectory('write-to-using-write-with-a-promise-resolving-a-buffer').then(directory => {
-		const writeToPromise = writer.writeTo(directory.join('buffer-from-promise-file-name.txt'));
-
-		assert(writeToPromise instanceof Promise);
-
-		return writeToPromise.then(()=>{
-			return directory.assertAllFilesExist([{
-				path: 'buffer-from-promise-file-name.txt',
-				content: 'file-content-from-promise-resolving-buffer'
-			}]).then(()=>{t.pass()})
-		});
-	});
-});
-
-test.cb('writeTo using write with a Promise resolving a buffer - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-
-	const writer = new FileWriter({
-		write: new Promise(resolve => setTimeout(()=>resolve(Buffer.from('file-content-from-promise-resolving-buffer-callback-style')), 50))
-	});
-
-	t.plan(1);
-	createMockDirectory('write-to-using-write-with-a-promise-resolving-a-buffer-callback-style').then(directory => {
-		const writeToResult = writer.writeTo(directory.join('buffer-from-promise-callback-style-file-name.txt'), err => {
-			assert(!err);
-
-			directory.assertAllFilesExist([{
-				path: 'buffer-from-promise-callback-style-file-name.txt',
-				content: 'file-content-from-promise-resolving-buffer-callback-style'
-			}]).then(()=>{t.pass();t.end()})
-		});
-
-		assert.equal(writeToResult, null);
-	});
-});
-
-test('writeTo using write with a Promise resolving a stream', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-
-	const writer = new FileWriter({
-		write: new Promise(resolve => setTimeout(()=>resolve(
-			fs.createReadStream(path.join(__dirname, '../mocks/write-to-using-write-with-a-stream-from-promise.txt'))
-		), 50))
-	});
-
-	t.plan(1);
-	return createMockDirectory('write-to-using-write-with-a-promise-resolving-a-stream').then(directory => {
-		const writeToPromise = writer.writeTo(directory.join('stream-from-promise-file-name.txt'));
-
-		assert(writeToPromise instanceof Promise);
-
-		return writeToPromise.then(()=>{
-			return directory.assertAllFilesExist([{
-				path: 'stream-from-promise-file-name.txt',
-				content: 'write-to-using-write-with-a-stream-from-promise-file-content'
-			}]).then(()=>{t.pass()})
-		});
-	});
-});
-
-test.cb('writeTo using write with a Promise resolving a stream - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-
-	const writer = new FileWriter({
-		write: new Promise(resolve => setTimeout(()=>resolve(
-			fs.createReadStream(path.join(__dirname, '../mocks/write-to-using-write-with-a-stream-from-promise.txt'))
-		), 50))
-	});
-
-	t.plan(1);
-	createMockDirectory('write-to-using-write-with-a-promise-resolving-a-stream-callback-style').then(directory => {
-		const writeToResult = writer.writeTo(directory.join('stream-from-promise-callback-style-file-name.txt'), err => {
-			assert(!err);
-
-			directory.assertAllFilesExist([{
-				path: 'stream-from-promise-callback-style-file-name.txt',
-				content: 'write-to-using-write-with-a-stream-from-promise-file-content'
-			}]).then(()=>{t.pass();t.end()})
-		});
-
-		assert.equal(writeToResult, null);
-	});
-});
+testWriteToPossibilities(writerPossibilities);
 
 test('writeTo using write with a failing Promise', t => {
 	const FileWriter = requireFromIndex('sources/file-writer');
@@ -332,7 +278,7 @@ test('writeTo using write with a failing Promise', t => {
 
 		assert(writeToPromise instanceof Promise);
 
-		return writeToPromise.then(()=>t.fail()).catch(err=>{
+		return writeToPromise.then(()=>t.fail()).catch(err => {
 			assert.equal(err.message, `Error getting the content of "${directory.join('must-be-preserved.txt')}" => promise error`);
 
 			return directory.assertAllFilesExist([{
@@ -365,170 +311,186 @@ test.cb('writeTo using write with a failing Promise - callback style', t => {
 	});
 });
 
-test.skip('writeTo using write with a Promise resolving a Promise', t => {
+test('writeTo using write with a failing function', t => {
 	const FileWriter = requireFromIndex('sources/file-writer');
 
 	const writer = new FileWriter({
-		write: new Promise(resolve )
-	})
+		write: callback => setTimeout(()=>callback(new Error('promise error')), 50)
+	});
+
+	t.plan(1);
+	return createMockDirectory('write-to-using-write-with-a-failing-function', 'must-be-preserved').then(directory => {
+		const writeToPromise = writer.writeTo(directory.join('must-be-preserved.txt'));
+
+		assert(writeToPromise instanceof Promise);
+
+		return writeToPromise.then(()=>t.fail()).catch(err=>{
+			assert.equal(err.message, `Error getting the content of "${directory.join('must-be-preserved.txt')}" => promise error`);
+
+			return directory.assertAllFilesExist([{
+				path: 'must-be-preserved.txt',
+				content: 'must-be-preserved'
+			}]).then(()=>{t.pass();})
+		});
+	});
 });
 
-test.skip('writeTo using write with a Promise resolving a Promise - callback style', t => {
+test.cb('writeTo using write with a failing function - callback style', t => {
 	const FileWriter = requireFromIndex('sources/file-writer');
 
 	const writer = new FileWriter({
-		write: new Promise(resolve )
-	})
+		write: callback => setTimeout(()=>callback(new Error('promise error')), 50)
+	});
+
+	t.plan(1);
+	createMockDirectory('write-to-using-write-with-a-failing-function-callback-style', 'must-be-preserved').then(directory => {
+		const writeToResult = writer.writeTo(directory.join('must-be-preserved.txt'), err => {
+			assert.equal(err.message, `Error getting the content of "${directory.join('must-be-preserved.txt')}" => promise error`);
+
+			directory.assertAllFilesExist([{
+				path: 'must-be-preserved.txt',
+				content: 'must-be-preserved'
+			}]).then(()=>{t.pass();t.end()})
+		});
+
+		assert.equal(writeToResult, null);
+	});
 });
 
-test.skip('writeTo using write with a Promise resolving a function', t => {
+function testWriteToOptionsPossibilities(possibilities){
 	const FileWriter = requireFromIndex('sources/file-writer');
 
-	const writer = new FileWriter({
-		write: new Promise(resolve )
-	})
-});
+	const expectedDependenciesOptions = {
+		'fs.writeFile': {
+			encoding: 'write-file-encoding'
+		},
+		'fs.createWriteStream': {
+			encoding: 'create-write-stream-encoding'
+		},
+		'fs.createReadStream': {
+			encoding: 'create-read-stream-encoding'
+		}
+	}
 
-test.skip('writeTo using write with a Promise resolving a function - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
+	const expectedDependenciesDefaultOptions = {
+		'fs.writeFile': {
+			encoding: 'utf-8'
+		},
+		'fs.createWriteStream': {
+			encoding: 'utf-8'
+		},
+		'fs.createReadStream': {
+			encoding: 'utf-8'
+		}
+	}
 
-	const writer = new FileWriter({
-		write: new Promise(resolve )
-	})
-});
+	possibilities.forEach(({
+		write = null,
+		copy = null,
+		dependencies,
+	}) => {
+		assert(Array.isArray(dependencies), `Please provide the dependencies for the possibility "${write || copy}"`);
+		if ((!write && !copy) || !!write === !!copy) {
+			throw new Error('Please provide a write value or a copy value');
+		}
 
-test.skip('writeTo using write with a function and string', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
+		dependencies.forEach(dependency => {
+			function possibilityOptionsTest(title, defaultOptions = false){
+				test(`${title}${defaultOptions ? ' -- default options' : ''}`, t => {
+					const id = possibilityTestIdentifier();
+					const expectedContent = `${id} => ${title} -- file content`;
+					const expectedFile = `/absolute/path/${dashify(title)}.txt`;
+					const expectedOptions = (defaultOptions ? expectedDependenciesDefaultOptions : expectedDependenciesOptions)[dependency];
 
-test.skip('writeTo using write with a function and string - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
+					function getWriterOptions() {
+						return write ? { write: getWriteValue(write, expectedContent) } : { copy: getWriteValue(copy, expectedContent, expectedFile) };
+					}
 
-test.skip('writeTo using write with a function and buffer', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
+					let passedFile = null;
+					let passedContent = null;
+					let passedOptions = null;
 
-test.skip('writeTo using write with a function and buffer - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
+					const fileWriter = new FileWriter(Object.assign({}, (defaultOptions ? {} : expectedOptions), getWriterOptions()));
 
-test.skip('writeTo using write with a function and stream', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
+					t.plan(2);
 
-test.skip('writeTo using write with a function and stream - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
+					return fileWriter.writeTo(expectedFile, null, {
+						fs: {
+							writeFile(destPath, data, options, cb){
+								if (dependency === 'fs.writeFile') {
+									passedFile = destPath;
+									passedContent = data;
+									passedOptions = options;
 
-test.skip('writeTo using write with a function and error', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
+									t.pass();
+								}
+								
+								cb();
+							},
+							createReadStream(originPath, options){
+								let stop = false;
+								return new ReadableStream({
+									read(){
+										if (dependency === 'fs.createReadStream' && !stop) {
+											passedFile = originPath;
+											passedContent = expectedContent;
+											passedOptions = options;
 
-test.skip('writeTo using write with a function and error - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
+											t.pass();
+										}
 
-test.skip('writeTo using write with a function and Promise', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
+										this.push(stop ? null : expectedContent);
+										stop = true;
+									}
+								});
+							},
+							createWriteStream(destPath, options){
+								return new WritableStream({
+									write (chunk, encoding, cb) {
+										if (dependency === 'fs.createWriteStream') {
+											passedFile = destPath;
+											passedContent = chunk.toString('utf-8');
+											passedOptions = options;
+											
+											t.pass();
+										}
+										cb();
+									}
+								});
+							}
+						}
+					}).then(()=>{
+						t.pass();
 
-test.skip('writeTo using write with a function and Promise - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
+						assert.equal(passedFile, expectedFile);
+						assert.equal(passedContent, expectedContent);
+						assert.deepEqual(passedOptions, expectedOptions);
+					});
+				});
+			}
 
-test.skip('writeTo using write with a function and function', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
+			const _title = `writeTo options using ${write ? 'write' : 'copy'} with ${write || copy} - ${dependency} options`;
 
-test.skip('writeTo using write with a function and function - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
+			possibilityOptionsTest(_title);
+			possibilityOptionsTest(_title, /*defaultOptions*/ true);
+		});
+	});
+}
 
-test.skip('writeTo using copy', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
+testWriteToOptionsPossibilities(writerPossibilities);
 
-test.skip('writeTo using copy - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
+// test.skip('writeTo using a non absolute path', t => {
+// 	const FileWriter = requireFromIndex('sources/file-writer');
+// });
 
-test.skip('writeTo using copy with a Promise resolving a string', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
+// test.skip('writeTo using a non existent path', t => {
+// 	const FileWriter = requireFromIndex('sources/file-writer');
+// });
 
-test.skip('writeTo using copy with a Promise resolving a string - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
+// test.skip('writeTo using a non existent path - callback style', t => {
+// 	const FileWriter = requireFromIndex('sources/file-writer');
+// });
 
-test.skip('writeTo using copy with a Promise resolving a Promise', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
-
-test.skip('writeTo using copy with a Promise resolving a Promise - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
-
-test.skip('writeTo using copy with a Promise resolving a function', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
-
-test.skip('writeTo using copy with a Promise resolving a function - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
-
-test.skip('writeTo using copy with a function', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
-
-test.skip('writeTo using copy with a function - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
-
-test.skip('writeTo using copy with a function and Promise', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
-
-test.skip('writeTo using copy with a function and Promise - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
-
-test.skip('writeTo using copy with a function and function', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
-
-test.skip('writeTo using copy with a function and function - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
-
-test.skip('writeTo using write and options', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
-
-test.skip('writeTo using copy and options', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
-
-test.skip('writeTo using write and default options', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
-
-test.skip('writeTo using copy and default options', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
-
-test.skip('writeTo using a non absolute path', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
-
-test.skip('writeTo using a non existent path', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
-
-test.skip('writeTo using a non existent path - callback style', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
-
-test.skip('unvalid instanciation', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-});
+// test.skip('unvalid instanciation', t => {
+// 	const FileWriter = requireFromIndex('sources/file-writer');
+// });
