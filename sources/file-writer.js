@@ -6,10 +6,14 @@ const path = require('path');
 const assert = require('better-assert');
 
 const isStream = require('is-stream');
+const defaultIsDirectory = require('is-directory');
+const defaultMkdirp = require('mkdirp');
+const ncp = require('ncp').ncp;
 
 const writeContents = new WeakMap();
 const copyContents = new WeakMap();
 
+/** @private */
 module.exports = class FileWriter{
 	constructor({
 		write = null,
@@ -20,7 +24,7 @@ module.exports = class FileWriter{
 
 		if (write) {
 			assert(copy === null);
-			assert(typeof write === 'string' || write instanceof Buffer || isStream(write) || write instanceof Promise || typeof write === 'function');
+			assert(write === true /* empty directory */ || typeof write === 'string' || write instanceof Buffer || isStream(write) || write instanceof Promise || typeof write === 'function');
 
 			writeContents.set(this, write);
 		}
@@ -36,7 +40,9 @@ module.exports = class FileWriter{
 	}
 
 	writeTo(destinationPath, callback, { // eslint-disable-line max-params
-		fs = defaultFS
+		fs = defaultFS,
+		isDirectory = defaultIsDirectory,
+		mkdirp = defaultMkdirp
 	} = {}){
 		assert(typeof destinationPath === 'string' && path.isAbsolute(destinationPath));
 		
@@ -44,12 +50,27 @@ module.exports = class FileWriter{
 		assert(typeof fs.writeFile === 'function');
 		assert(typeof fs.createReadStream === 'function');
 		assert(typeof fs.createWriteStream === 'function');
+		assert(typeof isDirectory === 'function');
+		assert(typeof mkdirp === 'function');
 
 		const options = {
 			encoding: this.encoding
 		};
 
-		const injection = {fs};
+		const injection = {
+			fs,
+			isDirectory,
+			mkdirp
+		};
+
+		function createDirectory(dirToCreate = path.dirname(destinationPath)) {
+			return new Promise((resolve, reject) => {
+				mkdirp(dirToCreate, {fs}, err => {
+					if (err) {reject(err); return;}
+					resolve();
+				});
+			});
+		}
 
 		if (writeContents.has(this)) {
 			const content = writeContents.get(this);
@@ -76,10 +97,17 @@ module.exports = class FileWriter{
 				})
 			}
 			else if (isStream(content)) {
-				content.pipe(fs.createWriteStream(destinationPath, options)).on('error', cb).on('finish', cb);
+				createDirectory().then(()=>{
+					content.pipe(fs.createWriteStream(destinationPath, options)).on('error', cb).on('finish', cb);
+				}).catch(cb);
+			}
+			else if (content === true /*empty directory*/){
+				createDirectory(destinationPath).then(cb).catch(cb);
 			}
 			else{
-				fs.writeFile(destinationPath, content, options, cb);
+				createDirectory().then(()=>{
+					fs.writeFile(destinationPath, content, options, cb);
+				}).catch(cb);
 			}
 		}
 		
@@ -109,9 +137,20 @@ module.exports = class FileWriter{
 				})
 			}
 			else{
-				new FileWriter(Object.assign({
-					write: fs.createReadStream(original, options)
-				}, options)).writeTo(destinationPath, cb, injection);
+				isDirectory(original, (err, dir) => {
+					if (err) {cb(err);return;}
+
+					if(dir){
+						createDirectory().then(()=>{
+							ncp(original, destinationPath, cb);
+						}).catch(cb);
+					}
+					else{
+						new FileWriter(Object.assign({
+							write: fs.createReadStream(original, options)
+						}, options)).writeTo(destinationPath, cb, injection);
+					}
+				});
 			}
 		}
 
