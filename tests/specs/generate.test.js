@@ -5,7 +5,7 @@ const test = require('ava');
 
 const requireFromIndex = require('../utils/require-from-index');
 
-const createMockDirectory = require('../utils/create-mock-directory');
+const createTestDirectory = require('../utils/create-test-directory');
 
 test('type and api', t => {
 	const generateFromIndex = requireFromIndex('index');
@@ -15,28 +15,67 @@ test('type and api', t => {
 	assert(typeof generate === 'function');
 });
 
-test('generate from an instance of FileWriter', t => {
+test.skip('generate.write and generate.copy', t => {
 	const generate = requireFromIndex('sources/generate');
-	const FileWriter = requireFromIndex('sources/file-writer');
 
-	t.plan(1);
-	return createMockDirectory('generate-from-instance-of-file-writer').then(directory => {
-		const generatePromise = generate({
-			[directory.join('file-from-file-writer.txt')]: new FileWriter({
-				write: 'file-content-from-file-writer'
-			})
-		});
-
-		assert(generatePromise instanceof Promise);
-
-		return generatePromise.then(()=>{
-			return directory.assertAllFilesExist([{
-				path: 'file-from-file-writer.txt',
-				content: 'file-content-from-file-writer'
-			}]).then(()=>{t.pass()})
-		});
-	});
+	assert(typeof generate.write === 'function');
+	assert(typeof generate.copy === 'function');
 });
+
+const validGenerateConfig = [
+	'generate config object',
+	'array of valid generate config',
+	'promise resolving a valid generate config',
+	'function resolving a valid generate config'
+];
+
+const validGenerateConfigObjectKeysValues = [
+	'instance of FileWriter',
+	'content as string',
+	'buffer',
+	'stream',
+	'valid generate config', //will nest the paths,
+	'content from generate.write',
+	'content from generate.copy'
+];
+
+// validGenerateConfig.forEach(validConfigType => {
+// 	mockConfig(validConfigType, validConfig => {
+
+// 	});
+// });
+
+
+// const availableOptions = {
+// 	override: [true, false],
+// 	backupStrategy: [false, null, 'trash', 'backup-file', 'custom-strategy'],
+// 	backupStrategyOptions: {},
+// 	onFileWriten: null,
+// 	rootPath: ''
+// };
+
+// test('generate from an instance of FileWriter', t => {
+// 	const generate = requireFromIndex('sources/generate');
+// 	const FileWriter = requireFromIndex('sources/file-writer');
+
+// 	t.plan(1);
+// 	return createMockDirectory('generate-from-instance-of-file-writer').then(directory => {
+// 		const generatePromise = generate({
+// 			[directory.join('file-from-file-writer.txt')]: new FileWriter({
+// 				write: 'file-content-from-file-writer'
+// 			})
+// 		});
+
+// 		assert(generatePromise instanceof Promise);
+
+// 		return generatePromise.then(()=>{
+// 			return directory.assertAllFilesExist([{
+// 				path: 'file-from-file-writer.txt',
+// 				content: 'file-content-from-file-writer'
+// 			}]).then(()=>{t.pass()})
+// 		});
+// 	});
+// });
 
 // test.skip('generate from an instance of FileWriter - callback style', t => {
 // });
