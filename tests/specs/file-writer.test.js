@@ -321,7 +321,7 @@ test.cb('writeTo using copy with a failing function - callback style', t => {
 	});
 });
 
-test('writeTo an non existent path using write with a failing Promise', t => {
+test('writeTo a non existent path using write with a failing Promise', t => {
 	const FileWriter = requireFromIndex('sources/file-writer');
 
 	const writer = new FileWriter({
@@ -348,7 +348,7 @@ test('writeTo an non existent path using write with a failing Promise', t => {
 	});
 });
 
-test.cb('writeTo an non existent path using write with a failing Promise - callback style', t => {
+test.cb('writeTo a non existent path using write with a failing Promise - callback style', t => {
 	const FileWriter = requireFromIndex('sources/file-writer');
 
 	const writer = new FileWriter({
@@ -373,7 +373,7 @@ test.cb('writeTo an non existent path using write with a failing Promise - callb
 	});
 });
 
-test('writeTo an non existent path using write with a failing function', t => {
+test('writeTo a non existent path using write with a failing function', t => {
 	const FileWriter = requireFromIndex('sources/file-writer');
 
 	const writer = new FileWriter({
@@ -400,7 +400,7 @@ test('writeTo an non existent path using write with a failing function', t => {
 	});
 });
 
-test.cb('writeTo an non existent path using write with a failing function - callback style', t => {
+test.cb('writeTo a non existent path using write with a failing function - callback style', t => {
 	const FileWriter = requireFromIndex('sources/file-writer');
 
 	const writer = new FileWriter({
@@ -425,7 +425,7 @@ test.cb('writeTo an non existent path using write with a failing function - call
 	});
 });
 
-test('writeTo an non existent path using copy with a failing Promise', t => {
+test('writeTo a non existent path using copy with a failing Promise', t => {
 	const FileWriter = requireFromIndex('sources/file-writer');
 
 	const writer = new FileWriter({
@@ -452,7 +452,7 @@ test('writeTo an non existent path using copy with a failing Promise', t => {
 	});
 });
 
-test.cb('writeTo an non existent path using copy with a failing Promise - callback style', t => {
+test.cb('writeTo a non existent path using copy with a failing Promise - callback style', t => {
 	const FileWriter = requireFromIndex('sources/file-writer');
 
 	const writer = new FileWriter({
@@ -477,7 +477,7 @@ test.cb('writeTo an non existent path using copy with a failing Promise - callba
 	});
 });
 
-test('writeTo an non existent path using copy with a failing function', t => {
+test('writeTo a non existent path using copy with a failing function', t => {
 	const FileWriter = requireFromIndex('sources/file-writer');
 
 	const writer = new FileWriter({
@@ -504,7 +504,7 @@ test('writeTo an non existent path using copy with a failing function', t => {
 	});
 });
 
-test.cb('writeTo an non existent path using copy with a failing function - callback style', t => {
+test.cb('writeTo a non existent path using copy with a failing function - callback style', t => {
 	const FileWriter = requireFromIndex('sources/file-writer');
 
 	const writer = new FileWriter({
@@ -602,8 +602,6 @@ writerPossibilities.forEach(possibility => {
 	if (last === 'directory') {
 		possibility.dependencies = [];
 	}
-
-	if (true) {}
 });
 
 let possibilityTestIdentifierCount = 0;

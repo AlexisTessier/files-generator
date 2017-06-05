@@ -8,7 +8,7 @@ const assert = require('better-assert');
 const isStream = require('is-stream');
 const defaultIsDirectory = require('is-directory');
 const defaultMkdirp = require('mkdirp');
-const ncp = require('ncp').ncp;
+const copyDirectory = require('ncp').ncp;
 
 const writeContents = new WeakMap();
 const copyContents = new WeakMap();
@@ -142,7 +142,7 @@ module.exports = class FileWriter{
 
 					if(dir){
 						createDirectory().then(()=>{
-							ncp(original, destinationPath, cb);
+							copyDirectory(original, destinationPath, cb);
 						}).catch(cb);
 					}
 					else{
