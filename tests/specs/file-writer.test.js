@@ -18,6 +18,8 @@ const mockFailingPromise = require('../mocks/mock-failing-promise');
 const mockFailingAsyncFunction = require('../mocks/mock-failing-async-function');
 const mockFileWriterOptionsObject = require('../mocks/mock-file-writer-options-object');
 
+test.todo('use process.cwd() for relative path and allow custom cwd');
+
 test('type and api', t => {
 	const FileWriter = requireFromIndex('sources/file-writer');
 
