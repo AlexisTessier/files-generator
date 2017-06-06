@@ -13,7 +13,7 @@ function mockFileWriterOptionsObject({
 
 	if (write) {
 		mockFileWriterWriteOptionValue(write, expectedContent, writeOptionValue => {
-			callback({ copy : writeOptionValue }, null);
+			callback({ write : writeOptionValue }, null);
 		});
 	}
 	else{

@@ -26,22 +26,43 @@ module.exports = function assertAllFilesExist(expectedFiles, assertAllFilesExist
 
 		if (expectedFile.content === false) {
 			fs.access(expectedFile.path, err => {
-				assert(err && err.code === 'ENOENT', `${expectedFile.path} shouldn't exist`);
-				checkedCount++;poll();
+				try{
+					assert(err && err.code === 'ENOENT', `${expectedFile.path} shouldn't exist`);
+				}
+				catch(err){
+					throw err;
+				}
+				finally{
+					checkedCount++;poll();
+				}
 			});
 		}
 		else if (expectedFile.content === true) {
 			isDirectory(expectedFile.path, (err, dir) => {
-				if (err){reject(err);return;};
-				assert.equal(dir, true, `${expectedFile.path} should be a directory`);
-				checkedCount++;poll();
+				try{
+					if (err){throw err;}
+					assert.equal(dir, true, `${expectedFile.path} should be a directory`);
+				}
+				catch(err){
+					throw err;
+				}
+				finally{
+					checkedCount++;poll();
+				}
 			});
 		}
 		else{
 			fs.readFile(expectedFile.path, {encoding: 'utf-8'}, (err, fileContent) => {
-				assert.equal(!err, true, `${expectedFile.path} wasn't created`);
-				assert.equal(`${expectedFile.path} contains => ${fileContent}`, `${expectedFile.path} contains => ${expectedFile.content}`);
-				checkedCount++;poll();
+				try{
+					assert.equal(!err, true, `${expectedFile.path} wasn't created`);
+					assert.equal(`${expectedFile.path} contains => ${fileContent}`, `${expectedFile.path} contains => ${expectedFile.content}`);
+				}
+				catch(err){
+					throw err;
+				}
+				finally{
+					checkedCount++;poll();
+				}
 			});
 		}
 	});

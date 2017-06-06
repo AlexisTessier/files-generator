@@ -34,9 +34,9 @@ function mockFileWriterWriteOptionValue(writeType, stringContent, writeMockCallb
 
 	if (writeType.indexOf('function resolving') === 0) {
 		mockFileWriterWriteOptionValue(writeType.replace('function resolving', ''), stringContent, resolveValue => {
-			writeMockCallback(callback => {
+			writeMockCallback(cb => {
 				setTimeout(()=>{
-					callback(null, resolveValue)
+					cb(null, resolveValue)
 				}, 50);
 			});
 		});
