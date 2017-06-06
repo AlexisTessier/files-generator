@@ -7,6 +7,9 @@ const requireFromIndex = require('../utils/require-from-index');
 
 const createTestDirectory = require('../utils/create-test-directory');
 
+const permutations = require('js-combinatorics').power;
+const randomstring = require("randomstring");
+
 test('type and api', t => {
 	const generateFromIndex = requireFromIndex('index');
 	const generate = requireFromIndex('sources/generate');
@@ -22,29 +25,116 @@ test.skip('generate.write and generate.copy', t => {
 	assert(typeof generate.copy === 'function');
 });
 
-const validGenerateConfig = [
+const possibleGenerateConfigsTypes = [
 	'generate config object',
-	'array of valid generate config',
-	'promise resolving a valid generate config',
-	'function resolving a valid generate config'
+	// 'array of valid generate config',
+	// 'promise resolving a valid generate config',
+	// 'function resolving a valid generate config'
 ];
 
-const validGenerateConfigObjectKeysValues = [
-	'instance of FileWriter',
+const possibleGenerateConfigObjectKeyValuesTypes = [
+	// 'instance of FileWriter',
 	'content as string',
-	'buffer',
-	'stream',
-	'valid generate config', //will nest the paths,
-	'content from generate.write',
-	'content from generate.copy'
+	// 'buffer',
+	// 'stream',
+	// 'valid generate config', //will nest the paths,
+	// 'content from generate.write',
+	// 'content from generate.copy'
 ];
 
-// validGenerateConfig.forEach(validConfigType => {
-// 	mockConfig(validConfigType, validConfig => {
+/*--------------------------------------*/
+/*--------------------------------------*/
+/*--------------------------------------*/
 
-// 	});
-// });
+const possibleGenerateConfigObjectsSchemaKeyValuesTypes = [
+	[],
+	...permutations(possibleGenerateConfigObjectKeyValuesTypes).toArray(),
+	possibleGenerateConfigObjectKeyValuesTypes,
+	[...possibleGenerateConfigObjectKeyValuesTypes, ...possibleGenerateConfigObjectKeyValuesTypes]
+];
 
+/*--------------------------------------*/
+/*--------------------------------------*/
+/*--------------------------------------*/
+
+let fileNameCount = 0;
+function mockGenerateConfigObjectKeyName(){
+	fileNameCount++;
+
+	if (fileNameCount % 3 === 0) {
+		return `mock-folder-name-${fileNameCount}/mock-subfolder-name-${fileNameCount}/mock-file-name-${fileNameCount}.txt`;
+	}
+
+	if (fileNameCount % 2 === 0) {
+		return `mock-folder-name-${fileNameCount}/mock-file-name-${fileNameCount}.txt`;
+	}
+	
+	return `mock-file-name-${fileNameCount}.txt`;
+}
+
+function mockGenerateConfigObjectKeyValue(valueType) {
+	if(valueType === 'content as string'){
+		return `file-content-${randomstring.generate()}`
+	}
+
+	throw new Error(`${valueType} is not a test handled type`);
+}
+
+function createGenerateConfigObjectsKeyValueSchema(valueType) {
+	if(valueType === 'content as string'){
+		return mockGenerateConfigObjectKeyValue(valueType);
+	}
+
+	throw new Error(`${valueType} is not a test handled type`);
+}
+
+function createGenerateConfigObjectsSchemas() {
+	const configObjects = [];
+	possibleGenerateConfigObjectsSchemaKeyValuesTypes.forEach(possibility => {
+		const conf = {};
+
+		possibility.forEach(keyValue => {
+			conf[mockGenerateConfigObjectKeyName()] = {
+				type: keyValue,
+				content: createGenerateConfigObjectsKeyValueSchema(keyValue)
+			}
+		});
+
+		configObjects.push(conf)
+	})
+
+	return configObjects;
+}
+
+possibleGenerateConfigsTypes.forEach(possibility => {
+	switch(possibility){
+		case 'generate config object':
+			createGenerateConfigObjectsSchemas().forEach(configSchema=>{
+				createGenerateTestWith(possibility, configSchema)
+			});
+		break;
+
+		default:
+			throw new Error(`${possibility} is not a test handled possibleGenerateConfigObject`);
+		break;
+	}
+});
+
+function createGenerateTestWith(configType, configSchema) {
+	test.cb.skip(`generate with a ${configType} which match the schema ${JSON.stringify(configSchema)}`, t => {
+		t.plan(1);
+
+		const expectedFiles = getExpectedFilesFromConfigSchema(configSchema);
+
+		t.pass(); t.end();
+	});
+}
+
+function getExpectedFilesFromConfigSchema(configSchema){
+	const expectedFiles = [];
+
+	return expectedFiles;
+}
 
 // const availableOptions = {
 // 	override: [true, false],
