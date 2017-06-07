@@ -39,7 +39,7 @@ module.exports = class FileWriter{
 		this.encoding = encoding;
 	}
 
-	writeTo(destinationPath, callback, { // eslint-disable-line max-params
+	writeTo(destinationPath, callback, {
 		fs = defaultFS,
 		isDirectory = defaultIsDirectory,
 		mkdirp = defaultMkdirp

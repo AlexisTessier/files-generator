@@ -4,10 +4,12 @@ const assert = require('better-assert');
 
 const FileWriter = require('./file-writer');
 
-function generate(generateConfig, callback) {
+function generate(generateConfig, {
+} = {}, callback) {
 	assert(typeof generateConfig === 'object');
 
 	const configKeys = Object.keys(generateConfig);
+	const options = {};
 
 	new Promise((resolve, reject) => {
 		if (configKeys.length === 0) {
@@ -20,13 +22,24 @@ function generate(generateConfig, callback) {
 				if (content instanceof FileWriter) {
 					return content.writeTo(destinationPath);
 				}
+				else if (typeof content === 'string') {
+					return generate({
+						[destinationPath]: generateWrite(content)
+					}, options);
+				}
 			})).then(()=>resolve()).catch(err => reject(err));
 		}
 	}).then(()=>{
-		callback(null)
+		cb(null)
 	}).catch(err=>{
-		callback(err)
+		cb(err)
 	});
+
+	function cb(err) {
+		process.nextTick(()=>{
+			callback(err);
+		});
+	};
 
 	if (typeof callback !== 'function') {
 		return new Promise(resolve => {
@@ -34,5 +47,16 @@ function generate(generateConfig, callback) {
 		});
 	}
 }
+
+function generateWrite(content) {
+	return new FileWriter({ write: content });
+}
+
+function generateCopy(pathToCopy) {
+	return new FileWriter({ copy: pathToCopy });
+}
+
+generate.write = generateWrite;
+generate.copy = generateCopy;
 
 module.exports = generate;

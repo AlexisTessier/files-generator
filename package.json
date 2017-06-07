@@ -64,7 +64,7 @@
   },
   "licenseDate": "2017-present",
   "devDependencies": {
-    "@alexistessier/es-lint-config": "^1.0.4",
+    "@alexistessier/es-lint-config": "^1.1.0",
     "ava": "^0.18.2",
     "capitalize": "^1.0.0",
     "concurrently": "^3.4.0",
