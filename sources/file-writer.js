@@ -31,7 +31,7 @@ module.exports = class FileWriter{
 
 		if (copy) {
 			assert(write === null);
-			assert((typeof copy === 'string' && path.isAbsolute(copy)) || copy instanceof Promise || typeof copy === 'function');
+			assert(typeof copy === 'string' || copy instanceof Promise || typeof copy === 'function');
 
 			copyContents.set(this, copy);
 		}
@@ -42,9 +42,10 @@ module.exports = class FileWriter{
 	writeTo(destinationPath, callback, {
 		fs = defaultFS,
 		isDirectory = defaultIsDirectory,
-		mkdirp = defaultMkdirp
+		mkdirp = defaultMkdirp,
+		cwd = process.cwd()
 	} = {}){
-		assert(typeof destinationPath === 'string' && path.isAbsolute(destinationPath));
+		assert(typeof destinationPath === 'string');
 		
 		assert(typeof fs === 'object');
 		assert(typeof fs.writeFile === 'function');
@@ -60,8 +61,15 @@ module.exports = class FileWriter{
 		const injection = {
 			fs,
 			isDirectory,
-			mkdirp
+			mkdirp,
+			cwd
 		};
+
+		function relativeToAbsolute(relativePath) {
+			return path.isAbsolute(relativePath) ? relativePath : path.join(cwd, relativePath);
+		}
+
+		destinationPath = relativeToAbsolute(destinationPath);
 
 		function createDirectory(dirToCreate = path.dirname(destinationPath)) {
 			return new Promise((resolve, reject) => {
@@ -113,7 +121,7 @@ module.exports = class FileWriter{
 		
 		/* istanbul ignore else */
 		if(copyContents.has(this)){
-			const original = copyContents.get(this);
+			let original = copyContents.get(this);
 
 			if(original instanceof Promise){
 				original.then(asyncOriginal => {
@@ -137,6 +145,8 @@ module.exports = class FileWriter{
 				})
 			}
 			else{
+				original = relativeToAbsolute(original);
+
 				isDirectory(original, (err, dir) => {
 					if (err) {cb(err);return;}
 

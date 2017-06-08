@@ -18,8 +18,6 @@ const mockFailingPromise = require('../mocks/mock-failing-promise');
 const mockFailingAsyncFunction = require('../mocks/mock-failing-async-function');
 const mockFileWriterOptionsObject = require('../mocks/mock-file-writer-options-object');
 
-test.todo('use process.cwd() for relative path and allow custom cwd');
-
 test('type and api', t => {
 	const FileWriter = requireFromIndex('sources/file-writer');
 
@@ -57,58 +55,6 @@ test('instanciation using copy and methods', t => {
 	assert(fileWriter instanceof FileWriter);
 
 	assert.equal(typeof fileWriter.writeTo, 'function');
-});
-
-test('instanciation using copy with a non absolute path', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-
-	t.throws(()=>{
-		new FileWriter({
-			copy: 'path/to/copy'
-		});
-	});
-});
-
-test.cb('writeTo using a non absolute path', t => {
-	const FileWriter = requireFromIndex('sources/file-writer');
-
-	t.plan(2);
-
-	const writer = new FileWriter({
-		write: 'file-content'
-	});
-	let passedPath = null;
-	let passedContent = null;
-
-	const fs = {
-		writeFile(path, content, options, cb){
-			passedPath = path;
-			passedContent = content;
-
-			cb();
-		},
-		createWriteStream(){},
-		createReadStream(){}
-	};
-
-	t.throws(()=>{
-		writer.writeTo('no/absolute/path.txt', null, { fs })
-	});
-
-	let writeToPromise = null;
-	try{
-		writeToPromise = writer.writeTo('no/absolute/path.txt', null, { fs });
-	}
-	catch(err){}
-	assert.equal(writeToPromise, null)
-	
-	setTimeout(()=>{
-		assert.equal(passedPath, null);
-		assert.equal(passedContent, null);
-
-		t.pass();
-		t.end();
-	}, 500);
 });
 
 // Unvalid instanciation
@@ -299,7 +245,7 @@ function testWriteToPossibilities(possibilities){
 		write = null,
 		copy = null
 	}) => {
-		function writeToTest(title, expectedFileBasePath = null){
+		function writeToTest(title, expectedFileBasePath = null, relative = false, custom_cwd = false){
 			const expectedFile = `${dashify(title)}.txt`;
 			let expectedContent = `${title} -- file content`;
 
@@ -310,17 +256,21 @@ function testWriteToPossibilities(possibilities){
 
 			writeToTestPromiseAndCallbackStyle(title, {
 				writerConfigMockParams: [{write, copy}, expectedContent],
-				testDirectory: {title: dashify(title)},
+				testDirectory: {title: dashify(title), relative},
 				writeTo: fullExpectedFilePath,
+				custom_cwd,
 				assertAllFilesExist: [{
 					path: fullExpectedFilePath,
-					content: lastType === 'directory' ? true : expectedContent
+					content: lastType === 'directory' ? true : expectedContent,
+					relative
 				}]
 			});
 		}
 
 		writeToTest(`writeTo using ${write ? 'write' : 'copy'} with ${write || copy}`);
 		writeToTest(`writeTo a non existent path using ${write ? 'write' : 'copy'} with ${write || copy}`, 'unexistent/path/to');
+		writeToTest(`writeTo a relative path using ${write ? 'write' : 'copy'} with ${write || copy}`, 'relative/path/to', /*relative*/true);
+		writeToTest(`writeTo a relative path using ${write ? 'write' : 'copy'} with ${write || copy} and a custom cwd`, 'relative/path/to', /*relative*/true, /*custom_cwd*/true);
 	});
 }
 
@@ -359,11 +309,13 @@ function testWriteToOptionsPossibilities(possibilities){
 		assert(Array.isArray(dependencies), `Please provide the dependencies for the possibility "${write || copy}"`);
 
 		dependencies.forEach(dependency => {
-			function possibilityOptionsTest(title, defaultOptions = false){
+			function possibilityOptionsTest(title, {
+				defaultOptions = null
+			} = {}){
 				test.cb(`${title}${defaultOptions ? ' -- default options' : ''}`, t => {
 					const expectedFile = `/absolute/path/${dashify(title)}.txt`;
 					const expectedContent = `${title} -- file content`;
-					const expectedOptions = (defaultOptions ? expectedDependenciesDefaultOptions : expectedDependenciesOptions)[dependency];
+					const expectedOptions = (defaultOptions ? defaultOptions : expectedDependenciesOptions)[dependency];
 
 					t.plan(2);
 
@@ -428,7 +380,9 @@ function testWriteToOptionsPossibilities(possibilities){
 			const _title = `writeTo options using ${write ? 'write' : 'copy'} with ${write || copy} - ${dependency} options`;
 
 			possibilityOptionsTest(_title);
-			possibilityOptionsTest(_title, /*defaultOptions*/ true);
+			possibilityOptionsTest(_title, {
+				defaultOptions: expectedDependenciesDefaultOptions
+			});
 		});
 	});
 }
@@ -456,24 +410,26 @@ function testDependenciesThrowingAnError(possibilities) {
 		}
 
 		throwingErrorDependencies.forEach(dep => {
-			function throwingErrorDependenciesTest(title){
+			function throwingErrorDependenciesTest(title, relative = false){
 				const expectedFile = `${dashify(title)}.txt`;
 				let expectedContent = `${title} -- file content`;
 
 				writeToTestPromiseAndCallbackStyle(title, {
 					writerConfigMockParams: [{ write, copy }, expectedContent],
-					testDirectory: {title: dashify(title)},
+					testDirectory: {title: dashify(title), relative},
 					writeTo: expectedFile,
 					writeToDependencies: getThrowingErrorDependency(dep),
 					expectError: `${dep} dependency error`,
 					assertAllFilesExist: [{
 						path: expectedFile,
-						content: false
+						content: false,
+						relative
 					}]
 				});
 			}
 
 			throwingErrorDependenciesTest(`writeTo using ${write ? 'write' : 'copy'} with ${write || copy} and the dependency "${dep}" throwing an error`);
+			throwingErrorDependenciesTest(`writeTo a relative path using ${write ? 'write' : 'copy'} with ${write || copy} and the dependency "${dep}" throwing an error`, /*relative*/ true);
 		});
 	});
 }
@@ -488,11 +444,12 @@ function writeToTestPromiseAndCallbackStyle(title, {
 	testDirectory,
 	writeTo,
 	writeToDependencies = undefined,
+	custom_cwd = false,
 	expectError,
 	assertAllFilesExist
 }) {
 	assert((writerConfig && writerConfigMockParams === null) || (writerConfigMockParams && writerConfig === null));
-	
+
 	test.cb(title, t => {
 		const FileWriter = requireFromIndex('sources/file-writer');
 
@@ -510,7 +467,9 @@ function writeToTestPromiseAndCallbackStyle(title, {
 
 			t.plan(1);
 			createTestDirectory(testDirectory, directory => {
-				const writeToPromise = writer.writeTo(directory.join(writeTo), null, writeToDependencies);
+				const writeToPromise = writer.writeTo(custom_cwd ? writeTo : directory.join(writeTo), null, Object.assign({
+					cwd : custom_cwd ?  directory.absolutePath : undefined
+				}, writeToDependencies));
 
 				assert(writeToPromise instanceof Promise);
 
@@ -529,7 +488,7 @@ function writeToTestPromiseAndCallbackStyle(title, {
 				else if(assertAllFilesExist){
 					writeToPromise.then(()=>{
 						directory.assertAllFilesExist(assertAllFilesExist, ()=>{t.pass();t.end();})
-					}).catch(err => {t.fail();t.end()});
+					}).catch(err => {throw err});
 				}
 				else{
 					t.pass();t.end();
@@ -557,7 +516,7 @@ function writeToTestPromiseAndCallbackStyle(title, {
 
 			t.plan(1);
 			createTestDirectory(callbackTestDirectory, directory => {
-				const writeToResult = writer.writeTo(directory.join(writeTo), err => {
+				const writeToResult = writer.writeTo(custom_cwd ? writeTo : directory.join(writeTo), err => {
 					if(expectError){
 						assert.equal(err.message, expectError.replace('{{{writeToPath}}}', directory.join(writeTo)));
 					}
@@ -571,7 +530,9 @@ function writeToTestPromiseAndCallbackStyle(title, {
 					else{
 						t.pass();t.end();
 					}
-				}, writeToDependencies);
+				}, Object.assign({
+					cwd : custom_cwd ?  directory.absolutePath : undefined
+				}, writeToDependencies));
 
 				assert.equal(writeToResult, null);
 			});

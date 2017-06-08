@@ -1,6 +1,7 @@
 'use strict';
 
 const fs = require('fs');
+const path = require('path');
 const assert = require('assert');
 
 const isDirectory = require('is-directory');
@@ -24,10 +25,16 @@ module.exports = function assertAllFilesExist(expectedFiles, assertAllFilesExist
 		assert(typeof expectedFile.path === 'string');
 		assert(typeof expectedFile.content === 'string' || typeof expectedFile.content === 'boolean');
 
+		let expectedFilePath = expectedFile.path;
+
+		if(expectedFile.relative === true){
+			expectedFilePath = path.join(process.cwd(), expectedFilePath);
+		}
+
 		if (expectedFile.content === false) {
-			fs.access(expectedFile.path, err => {
+			fs.access(expectedFilePath, err => {
 				try{
-					assert(err && err.code === 'ENOENT', `${expectedFile.path} shouldn't exist`);
+					assert(err && err.code === 'ENOENT', `${expectedFilePath} shouldn't exist`);
 				}
 				catch(err){
 					throw err;
@@ -38,10 +45,10 @@ module.exports = function assertAllFilesExist(expectedFiles, assertAllFilesExist
 			});
 		}
 		else if (expectedFile.content === true) {
-			isDirectory(expectedFile.path, (err, dir) => {
+			isDirectory(expectedFilePath, (err, dir) => {
 				try{
 					if (err){throw err;}
-					assert.equal(dir, true, `${expectedFile.path} should be a directory`);
+					assert.equal(dir, true, `${expectedFilePath} should be a directory`);
 				}
 				catch(err){
 					throw err;
@@ -52,10 +59,10 @@ module.exports = function assertAllFilesExist(expectedFiles, assertAllFilesExist
 			});
 		}
 		else{
-			fs.readFile(expectedFile.path, {encoding: 'utf-8'}, (err, fileContent) => {
+			fs.readFile(expectedFilePath, {encoding: 'utf-8'}, (err, fileContent) => {
 				try{
-					assert.equal(!err, true, `${expectedFile.path} wasn't created`);
-					assert.equal(`${expectedFile.path} contains => ${fileContent}`, `${expectedFile.path} contains => ${expectedFile.content}`);
+					assert.equal(!err, true, `${expectedFilePath} wasn't created`);
+					assert.equal(`${expectedFilePath} contains => ${fileContent}`, `${expectedFilePath} contains => ${expectedFile.content}`);
 				}
 				catch(err){
 					throw err;

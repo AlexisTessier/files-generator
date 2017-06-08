@@ -12,6 +12,7 @@ temp.track();
 
 module.exports = function createTestDirectory({
 	title,
+	relative = false,
 	template = null
 }, createTestDirectoryCallback) {
 	assert(typeof title === 'string' && title.length >= 2);
@@ -20,8 +21,11 @@ module.exports = function createTestDirectory({
 	temp.mkdir(title, (err, directoryPath)=>{
 		if (err) {throw err;return;}
 
+		directoryPath = relative ? path.relative(process.cwd(), directoryPath) : directoryPath;
+
 		function createTestDirectoryCallbackRun() {
 			createTestDirectoryCallback({
+				absolutePath: relative ? path.join(process.cwd(), directoryPath) : directoryPath,
 				path: directoryPath,
 				join: (...p) => path.join(directoryPath, ...p),
 				assertAllFilesExist (expectedFiles, cb){
@@ -29,7 +33,8 @@ module.exports = function createTestDirectory({
 
 					assertAllFilesExist(expectedFiles.map(file => ({
 						path: path.join(directoryPath, file.path),
-						content: file.content
+						content: file.content,
+						relative: file.relative
 					})), cb);
 				},
 			})
