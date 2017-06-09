@@ -13,6 +13,8 @@ const permutations = require('js-combinatorics').power;
 const randomstring = require("randomstring");
 const dashify = require('dashify');
 
+const intoStream = require('into-stream');
+
 test('type and api', t => {
 	const generateFromIndex = requireFromIndex('index');
 	const generate = requireFromIndex('sources/generate');
@@ -38,8 +40,8 @@ const possibleGenerateConfigsTypes = [
 const possibleGenerateConfigObjectKeyValuesTypes = [
 	// 'instance of FileWriter',
 	'content as string',
-	// 'true for directory',
-	// 'buffer',
+	'true for directory',
+	'buffer',
 	// 'stream',
 	// 'valid generate config', //will nest the paths,
 	// 'content from generate.write',
@@ -76,20 +78,41 @@ function mockGenerateConfigObjectKeyName(){
 	return `mock-file-name-${fileNameCount}.txt`;
 }
 
+function mockFileContent(){
+	return `file-content-${randomstring.generate()}`;
+}
+
 function mockGenerateConfigObjectKeyValue(valueType) {
 	if(valueType === 'content as string'){
-		return `file-content-${randomstring.generate()}`
+		return mockFileContent()
 	}
 
-	throw new Error(`${valueType} is not a test handled type`);
+	if(valueType === 'true for directory'){
+		return true
+	}
+
+	if(valueType === 'buffer'){
+		return Buffer.from(mockFileContent())
+	}
+
+	if(valueType === 'true for directory'){
+		return intoStream(mockFileContent())
+	}
+
+	throw new Error(`mockGenerateConfigObjectKeyValue: ${valueType} is not a test handled type`)
 }
 
 function createGenerateConfigObjectsKeyValueSchema(valueType) {
-	if(valueType === 'content as string'){
+	if(
+		valueType === 'content as string' ||
+		valueType === 'true for directory' ||
+		valueType === 'buffer' ||
+		valueType === 'stream'
+	){
 		return mockGenerateConfigObjectKeyValue(valueType);
 	}
 
-	throw new Error(`${valueType} is not a test handled type`);
+	throw new Error(`createGenerateConfigObjectsKeyValueSchema: ${valueType} is not a test handled type`);
 }
 
 function createGenerateConfigObjectsSchemas() {
@@ -145,7 +168,7 @@ function createGenerateTestWith(configType, configSchema) {
 					directory.assertAllFilesExist(expectedFiles, ()=>{
 						t.pass();t.end();
 					});
-				}).catch(err => {t.fail();t.end()});
+				});
 			});
 		});
 	});
@@ -190,6 +213,9 @@ function getExpectedFilesFromConfigSchema(configSchema, baseFilePath = null){
 
 		switch(entry.type){
 			case 'content as string':
+			case 'true for directory':
+			case 'buffer':
+			case 'stream':
 				expectedFiles.push({
 					path: fullPath(filePath),
 					content: entry.content
@@ -197,7 +223,7 @@ function getExpectedFilesFromConfigSchema(configSchema, baseFilePath = null){
 			break;
 			
 			default:
-				throw new Error(`${entry.type} is not a test handled type`);
+				throw new Error(`getExpectedFilesFromConfigSchema: ${entry.type} is not a test handled type`);
 			break;
 		}
 	}
@@ -225,12 +251,15 @@ function getGenerateConfigFromConfigSchema(configSchema, directory, configCallba
 
 		switch(entry.type){
 			case 'content as string':
+			case 'true for directory':
+			case 'buffer':
+			case 'stream':
 				copy[fullFilePath] = entry.content;
 				checkedCount++;poll();
 			break;
 			
 			default:
-				throw new Error(`${entry.type} is not a test handled type`);
+				throw new Error(`getGenerateConfigFromConfigSchema: ${entry.type} is not a test handled type`);
 			break;
 		}
 	}

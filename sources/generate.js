@@ -3,6 +3,7 @@
 const assert = require('better-assert');
 
 const FileWriter = require('./file-writer');
+const isStream = require('is-stream');
 
 function generate(generateConfig, {
 } = {}, callback) {
@@ -20,12 +21,33 @@ function generate(generateConfig, {
 				const content = generateConfig[destinationPath];
 
 				if (content instanceof FileWriter) {
-					return content.writeTo(destinationPath);
+					let writeToPromise = null;
+					let _err = null;
+
+					try{
+						writeToPromise = content.writeTo(destinationPath);
+					}
+					catch(err){
+						_err = err;
+						reject(err);
+					}
+
+					if (writeToPromise && !_err) {
+						return writeToPromise;
+					}
 				}
-				else if (typeof content === 'string') {
+				else if (
+					typeof content === 'string' ||
+					content instanceof Buffer ||
+					isStream(content) ||
+					content === true
+				) {
 					return generate({
 						[destinationPath]: generateWrite(content)
 					}, options);
+				}
+				else{
+					reject(new Error(`${content} (${typeof content}) is not a valid file content.`));
 				}
 			})).then(()=>resolve()).catch(err => reject(err));
 		}
@@ -42,7 +64,7 @@ function generate(generateConfig, {
 	};
 
 	if (typeof callback !== 'function') {
-		return new Promise(resolve => {
+		return new Promise((resolve, reject) => {
 			callback = err => err ? reject(err) : resolve()
 		});
 	}
