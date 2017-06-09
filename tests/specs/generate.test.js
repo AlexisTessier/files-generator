@@ -5,15 +5,50 @@ const path = require('path');
 const assert = require('assert');
 const test = require('ava');
 
-const requireFromIndex = require('../utils/require-from-index');
-
-const createTestDirectory = require('../utils/create-test-directory');
-
 const permutations = require('js-combinatorics').power;
 const randomstring = require("randomstring");
 const dashify = require('dashify');
-
 const intoStream = require('into-stream');
+
+const requireFromIndex = require('../utils/require-from-index');
+const createTestDirectory = require('../utils/create-test-directory');
+
+const FileWriter = requireFromIndex('sources/file-writer');
+class mockFileWriter extends FileWriter{
+	constructor({
+		write = null,
+		copy = null,
+		encoding = null
+	} = {}){
+		super({
+			write: 'write'
+		});
+
+		this.constructorCallCount = this.constructorCallCount ? this.constructorCallCount+1 : 1;
+		this.constructorCalled = {
+			write, copy, encoding
+		};
+	}
+
+	writeTo(destinationPath = null, callback = null, {
+		fs = null,
+		isDirectory = null,
+		mkdirp = null,
+		cwd = null
+	} = {}){
+		this.writeToCalledCount = this.writeToCalledCount ? this.writeToCalledCount+1 : 1;
+		this.writeToCalled = {
+			destinationPath, callback, fs, isDirectory, mkdirp, cwd
+		};
+
+		if(callback){
+			callback();
+		}
+		else{
+			return Promise.resolve();
+		}
+	}
+}
 
 test('type and api', t => {
 	const generateFromIndex = requireFromIndex('index');
@@ -23,10 +58,18 @@ test('type and api', t => {
 	assert(typeof generate === 'function');
 });
 
-test.skip('generate.write and generate.copy', t => {
+test.skip('generate.write', t => {
 	const generate = requireFromIndex('sources/generate');
 
 	assert(typeof generate.write === 'function');
+
+	const contentMock = mockFileContent();
+	const fileWriter = generate.write(contentMock);
+});
+
+test.skip('generate.copy', t => {
+	const generate = requireFromIndex('sources/generate');
+
 	assert(typeof generate.copy === 'function');
 });
 
@@ -38,14 +81,12 @@ const possibleGenerateConfigsTypes = [
 ];
 
 const possibleGenerateConfigObjectKeyValuesTypes = [
-	// 'instance of FileWriter',
+	'instance of FileWriter',
 	'content as string',
 	'true for directory',
 	'buffer',
-	// 'stream',
-	// 'valid generate config', //will nest the paths,
-	// 'content from generate.write',
-	// 'content from generate.copy'
+	'stream',
+	// 'valid generate config', //will nest the paths
 ];
 
 /*--------------------------------------*/
@@ -82,9 +123,9 @@ function mockFileContent(){
 	return `file-content-${randomstring.generate()}`;
 }
 
-function mockGenerateConfigObjectKeyValue(valueType) {
+function mockGenerateConfigObjectKeyValue(valueType, content) {
 	if(valueType === 'content as string'){
-		return mockFileContent()
+		return content;
 	}
 
 	if(valueType === 'true for directory'){
@@ -92,45 +133,18 @@ function mockGenerateConfigObjectKeyValue(valueType) {
 	}
 
 	if(valueType === 'buffer'){
-		return Buffer.from(mockFileContent())
+		return Buffer.from(content)
 	}
 
-	if(valueType === 'true for directory'){
-		return intoStream(mockFileContent())
+	if(valueType === 'stream'){
+		return intoStream(content)
+	}
+
+	if (valueType === 'instance of FileWriter') {
+		return new mockFileWriter()
 	}
 
 	throw new Error(`mockGenerateConfigObjectKeyValue: ${valueType} is not a test handled type`)
-}
-
-function createGenerateConfigObjectsKeyValueSchema(valueType) {
-	if(
-		valueType === 'content as string' ||
-		valueType === 'true for directory' ||
-		valueType === 'buffer' ||
-		valueType === 'stream'
-	){
-		return mockGenerateConfigObjectKeyValue(valueType);
-	}
-
-	throw new Error(`createGenerateConfigObjectsKeyValueSchema: ${valueType} is not a test handled type`);
-}
-
-function createGenerateConfigObjectsSchemas() {
-	const configObjects = [];
-	possibleGenerateConfigObjectsSchemaKeyValuesTypes.forEach(possibility => {
-		const conf = {};
-
-		possibility.forEach(keyValue => {
-			conf[mockGenerateConfigObjectKeyName()] = {
-				type: keyValue,
-				content: createGenerateConfigObjectsKeyValueSchema(keyValue)
-			}
-		});
-
-		configObjects.push(conf)
-	})
-
-	return configObjects;
 }
 
 possibleGenerateConfigsTypes.forEach(possibility => {
@@ -147,25 +161,55 @@ possibleGenerateConfigsTypes.forEach(possibility => {
 	}
 });
 
+function createGenerateConfigObjectsSchemas() {
+	const configObjects = [];
+	possibleGenerateConfigObjectsSchemaKeyValuesTypes.forEach(possibility => {
+		const conf = {};
+
+		possibility.forEach(type => {
+			conf[mockGenerateConfigObjectKeyName()] = {
+				type,
+				content: type === 'true for directory' ? true : mockFileContent()
+			}
+		});
+
+		configObjects.push(conf);
+	})
+
+	return configObjects;
+}
+
 function createGenerateTestWith(configType, configSchema) {
-	const title = `generate with a ${configType} which match the schema ${JSON.stringify(configSchema)}`;
+	const title = `${configType} which match the schema ${JSON.stringify(configSchema)}`;
 	test.cb(title, t => {
 		t.plan(1);
 
-		const expectedFiles = getExpectedFilesFromConfigSchema(configSchema);
 		createTestDirectory({
 			title: dashify(title).substring(0, 200),
 			template: 'must-be-preserved'
 		}, directory => {
 			const generate = requireFromIndex('sources/generate');
 			
-			getGenerateConfigFromConfigSchema(configSchema, directory, config => {
+			getGenerateConfigFromConfigSchema(configSchema, directory, (config, fileWriters) => {
+				const expectedFiles = getExpectedFilesFromConfigSchema(configSchema);
+
 				const generatePromise = generate(config);
 
 				assert(generatePromise instanceof Promise);
 
 				generatePromise.then(()=>{
-					directory.assertAllFilesExist(expectedFiles, ()=>{
+					directory.assertAllFilesExist(expectedFiles.filter(f => !f.fromFileWriter), ()=>{
+
+						fileWriters.forEach(({writer, destinationPath}) => {
+							assert.equal(writer.writeToCalledCount, 1);
+							assert.equal(writer.writeToCalled.destinationPath, destinationPath);
+							assert.equal(writer.writeToCalled.callback, null);
+							assert.equal(writer.writeToCalled.fs, null);
+							assert.equal(writer.writeToCalled.isDirectory, null);
+							assert.equal(writer.writeToCalled.mkdirp, null);
+							assert.equal(writer.writeToCalled.cwd, null);
+						});
+
 						t.pass();t.end();
 					});
 				});
@@ -176,18 +220,29 @@ function createGenerateTestWith(configType, configSchema) {
 	test.cb(`${title} - callback style`, t => {
 		t.plan(1);
 
-		const expectedFiles = getExpectedFilesFromConfigSchema(configSchema);
 		createTestDirectory({
 			title: dashify(title).substring(0, 200)+' - callback style',
 			template: 'must-be-preserved'
 		}, directory => {
 			const generate = requireFromIndex('sources/generate');
 			
-			getGenerateConfigFromConfigSchema(configSchema, directory, config => {
-				const generateResult = generate(config, undefined, err=>{
+			getGenerateConfigFromConfigSchema(configSchema, directory, (config, fileWriters) => {
+				const expectedFiles = getExpectedFilesFromConfigSchema(configSchema);
+
+				const generateResult = generate(config, undefined, err => {
 					assert(!err);
 
-					directory.assertAllFilesExist(expectedFiles, ()=>{
+					directory.assertAllFilesExist(expectedFiles.filter(f => !f.fromFileWriter), ()=>{
+						fileWriters.forEach(({writer, destinationPath}) => {
+							assert.equal(writer.writeToCalledCount, 1);
+							assert.equal(writer.writeToCalled.destinationPath, destinationPath);
+							assert.equal(writer.writeToCalled.callback, null);
+							assert.equal(writer.writeToCalled.fs, null);
+							assert.equal(writer.writeToCalled.isDirectory, null);
+							assert.equal(writer.writeToCalled.mkdirp, null);
+							assert.equal(writer.writeToCalled.cwd, null);
+						});
+
 						t.pass();t.end();
 					});
 				});
@@ -211,21 +266,11 @@ function getExpectedFilesFromConfigSchema(configSchema, baseFilePath = null){
 	for(const filePath in configSchema){
 		const entry = configSchema[filePath];
 
-		switch(entry.type){
-			case 'content as string':
-			case 'true for directory':
-			case 'buffer':
-			case 'stream':
-				expectedFiles.push({
-					path: fullPath(filePath),
-					content: entry.content
-				});
-			break;
-			
-			default:
-				throw new Error(`getExpectedFilesFromConfigSchema: ${entry.type} is not a test handled type`);
-			break;
-		}
+		expectedFiles.push({
+			path: fullPath(filePath),
+			content: entry.content,
+			fromFileWriter: entry.type === 'instance of FileWriter'
+		});
 	}
 
 	return expectedFiles;
@@ -233,13 +278,14 @@ function getExpectedFilesFromConfigSchema(configSchema, baseFilePath = null){
 
 function getGenerateConfigFromConfigSchema(configSchema, directory, configCallback) {
 	const copy = {};
+	const fileWriters = [];
 
 	const toCheckCount = Object.keys(configSchema).length;
 	let checkedCount = 0;
 
 	function poll(){
 		if (checkedCount >= toCheckCount) {
-			configCallback(copy);
+			configCallback(copy, fileWriters);
 		}
 	}
 
@@ -249,19 +295,16 @@ function getGenerateConfigFromConfigSchema(configSchema, directory, configCallba
 		const entry = configSchema[filePath];
 		const fullFilePath = directory ? directory.join(filePath) : filePath;
 
-		switch(entry.type){
-			case 'content as string':
-			case 'true for directory':
-			case 'buffer':
-			case 'stream':
-				copy[fullFilePath] = entry.content;
-				checkedCount++;poll();
-			break;
-			
-			default:
-				throw new Error(`getGenerateConfigFromConfigSchema: ${entry.type} is not a test handled type`);
-			break;
+		copy[fullFilePath] = mockGenerateConfigObjectKeyValue(entry.type, entry.content);
+
+		if (entry.type === 'instance of FileWriter') {
+			fileWriters.push({
+				writer: copy[fullFilePath],
+				destinationPath: fullFilePath
+			});
 		}
+
+		checkedCount++;poll();
 	}
 }
 
