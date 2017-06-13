@@ -5,6 +5,20 @@ const intoStream = require('into-stream');
 function mockFileWriterWriteOptionValue(writeType, stringContent, writeMockCallback) {
 	writeType = writeType.trim();
 
+	if (writeType === 'failing function') {
+		writeMockCallback(
+			callback => setTimeout(()=>callback(new Error('mock failing function error')), 50)
+		)
+		return;
+	}
+
+	if (writeType === 'failing promise') {
+		writeMockCallback(
+			new Promise((resolve, reject) => setTimeout(()=>reject(new Error('mock failing promise error')), 50))
+		);
+		return;
+	}
+
 	if(writeType === 'string'){
 		writeMockCallback(stringContent);
 		return;

@@ -9,6 +9,20 @@ const createTestDirectory = require('../utils/create-test-directory');
 function mockFileWriterCopyOptionValue(copyType, stringContent, copyMockCallback) {
 	copyType = copyType.trim();
 
+	if (copyType === 'failing function') {
+		copyMockCallback(
+			callback => setTimeout(()=>callback(new Error('mock failing function error')), 50)
+		)
+		return;
+	}
+
+	if (copyType === 'failing promise') {
+		copyMockCallback(
+			new Promise((resolve, reject) => setTimeout(()=>reject(new Error('mock failing promise error')), 50))
+		);
+		return;
+	}
+
 	if (copyType.indexOf('promise resolving') === 0) {
 		mockFileWriterCopyOptionValue(copyType.replace('promise resolving', ''), stringContent, (resolveValue, pathToCopy) => {
 			copyMockCallback(new Promise(_resolve => setTimeout(()=>_resolve(resolveValue), 50)), pathToCopy);
