@@ -12,8 +12,9 @@ const ReadableStream = stream.Readable;
 const dashify = require('dashify');
 
 const requireFromIndex = require('../utils/require-from-index');
-const createTestDirectory = require('../utils/create-test-directory');
 
+const writeToBefore = require('../utils/write-to-before');
+const createTestDirectory = require('../utils/create-test-directory');
 const mockFileWriterOptionsObject = require('../mocks/mock-file-writer-options-object');
 
 test('type and api', t => {
@@ -88,192 +89,135 @@ test('instanciation using copy and methods', t => {
 /*-------------------------------------------------*/
 /*-------------------------------------------------*/
 
-function writeToPromiseStyleMacro(t, {
-	write,
-	copy,
-	writeToPath,
-	writeToDependencies,
-	expectError,
-	assertAllFilesExist = [],
-	copyOriginalPath = null,
-	expectedFileContent = null,
-	custom_cwd
-}){
-	assert((write || copy) && (!!write !== !!copy));
+function writeToPromiseStyleMacro(t, testVariant){
+	writeToBefore(t, testVariant, ({
+		writerConfig,
+		writeToDest,
+		writeToDependencies,
+		expectedErrorMessage,
+		assertAllFilesExist
+	}) => {
+		const FileWriter = requireFromIndex('sources/file-writer');
 
-	assertAllFilesExist = [...assertAllFilesExist, {
-		path: 'must-be-preserved.txt',
-		content: 'must-be-preserved'
-	}];
+		const writer = new FileWriter(writerConfig);
 
-	createTestDirectory({
-		title: dashify(t.title),
-		template: 'must-be-preserved'
-	}, destDirectory => {
+		const writeToPromise = writer.writeTo(writeToDest, null, writeToDependencies);
 
+		assert(writeToPromise instanceof Promise);
 
+		if(expectedErrorMessage){
+			writeToPromise.then(()=>{t.fail();}).catch(err => {
+				assert.equal(err.message, expectedErrorMessage);
+
+				assertAllFilesExist(()=>{t.pass();t.end();});
+			});
+		}
+		else{
+			writeToPromise.then(()=>{
+				assertAllFilesExist(()=>{t.pass();t.end();})
+			}).catch(err => {assert.equal(!!err, false, `${t.title} shouldn't throw error`)});
+		}
 	});
-
-	//function testWith()
-
-	//defaultExpectedFileContent = 
-
-	// mockFileWriterOptionsObject({
-	// 	write, copy
-	// }, copy ? (copyOriginalPath) :, writerConfig => {
-
-	// });
-
-	// const FileWriter = requireFromIndex('sources/file-writer');
-
-	// const writerConfig = write ? {write} : {copy};
-
-
-	// 	if (writerConfig) {
-	// 		testWithConfig(writerConfig)
-	// 	}
-	// 	else{
-	// 		mockFileWriterOptionsObject(writerConfigMockParams[0], writerConfigMockParams[1], writerConfig => {
-	// 			testWithConfig(writerConfig);
-	// 		});
-	// 	}
-
-	// 	function testWithConfig(conf){
-	// 		const writer = new FileWriter(conf);
-
-	// 		t.plan(1);
-	// 		createTestDirectory(testDirectory, directory => {
-	// 			const writeToPromise = writer.writeTo(custom_cwd ? writeTo : directory.join(writeTo), null, Object.assign({
-	// 				cwd : custom_cwd ?  directory.absolutePath : undefined
-	// 			}, writeToDependencies));
-
-	// 			assert(writeToPromise instanceof Promise);
-
-	// 			if(expectError){
-	// 				writeToPromise.then(()=>{t.fail();}).catch(err => {
-	// 					assert.equal(err.message, expectError.replace('{{{writeToPath}}}', directory.join(writeTo)));
-
-	// 					if (assertAllFilesExist) {
-	// 						directory.assertAllFilesExist(assertAllFilesExist, ()=>{t.pass();t.end();})
-	// 					}
-	// 					else{
-	// 						t.pass();t.end();
-	// 					}
-	// 				});
-	// 			}
-	// 			else if(assertAllFilesExist){
-	// 				writeToPromise.then(()=>{
-	// 					directory.assertAllFilesExist(assertAllFilesExist, ()=>{t.pass();t.end();})
-	// 				}).catch(err => {throw err});
-	// 			}
-	// 			else{
-	// 				t.pass();t.end();
-	// 			}
-	// 		});
-	// 	}
 }
+writeToPromiseStyleMacro.title = (providedTitle, info) => `.writeTo() using ${info.write ? 'write' : 'copy'} with a ${info.write || info.copy} - promise style`;
 
-writeToPromiseStyleMacro.title = (providedTitle, info) => `.writeTo() using ${info.write ? 'write' : 'copy'} with a ${info.write.trim()} - promise style`;
+function writeToCallbackStyleMacro(t, testVariant){
+	writeToBefore(t, testVariant, ({
+		writerConfig,
+		writeToDest,
+		writeToDependencies,
+		expectedErrorMessage,
+		assertAllFilesExist
+	}) => {
+		const FileWriter = requireFromIndex('sources/file-writer');
 
-test.cb([writeToPromiseStyleMacro], {
+		const writer = new FileWriter(writerConfig);
+
+		const writeToResult = writer.writeTo(writeToDest, err => {
+			if(expectedErrorMessage){
+				assert.equal(err.message, expectedErrorMessage);
+			}
+			else{
+				assert(!err, `${t.title} shouldn't throw error`);
+			}
+
+			assertAllFilesExist(()=>{t.pass();t.end()})
+		}, writeToDependencies);
+
+		assert.equal(writeToResult, null);
+	});
+}
+writeToCallbackStyleMacro.title = (providedTitle, info) => `${providedTitle} - .writeTo() using ${info.write ? 'write' : 'copy'} with a ${info.write || info.copy} - callback style`;
+
+const writeToPromiseAndCallbackStyleMacro = [writeToPromiseStyleMacro, writeToCallbackStyleMacro];
+
+/*-------------------------------------------------*/
+/*-------------------------------------------------*/
+/*-------------------------------------------------*/
+
+test.cb(writeToPromiseAndCallbackStyleMacro, {
 	write : 'failing promise',
 	writeToPath: 'must-be-preserved.txt',
-	expectError: 'Error getting the content of "{{{writeToPath}}}" => promise error'
+	expectError: 'Error getting the content of "{{{writeToPath}}}" => mock failing promise error'
 })
 
-test.cb([writeToPromiseStyleMacro], {
+test.cb(writeToPromiseAndCallbackStyleMacro, {
 	write : 'failing function',
 	writeToPath: 'must-be-preserved.txt',
-	expectError: 'Error getting the content of "{{{writeToPath}}}" => callback function error'
+	expectError: 'Error getting the content of "{{{writeToPath}}}" => mock failing function error'
 })
 
-test.cb([writeToPromiseStyleMacro], {
+test.cb(writeToPromiseAndCallbackStyleMacro, {
 	copy : 'failing promise',
 	writeToPath: 'must-be-preserved.txt',
-	expectError: 'Error getting the original to copy to "{{{writeToPath}}}" => promise error'
+	expectError: 'Error getting the original to copy to "{{{writeToPath}}}" => mock failing promise error'
 })
 
-test.cb([writeToPromiseStyleMacro], {
+test.cb(writeToPromiseAndCallbackStyleMacro, {
 	copy : 'failing function',
 	writeToPath: 'must-be-preserved.txt',
-	expectError: 'Error getting the original to copy to "{{{writeToPath}}}" => callback function error'
+	expectError: 'Error getting the original to copy to "{{{writeToPath}}}" => mock failing function error'
 })
 
-// writeToTestPromiseAndCallbackStyle('writeTo a non existent path using write with a failing Promise', {
-// 	writerConfig: {
-// 		write: mockFailingPromise()
-// 	},
-// 	testDirectory: {
-// 		title: 'write-to-an-non-existent-path-using-write-with-a-failing-promise',
-// 		template: 'must-be-preserved'
-// 	},
-// 	writeTo: 'non/existent/path.txt',
-// 	expectError: 'Error getting the content of "{{{writeToPath}}}" => promise error',
-// 	assertAllFilesExist: [{
-// 		path: 'must-be-preserved.txt',
-// 		content: 'must-be-preserved'
-// 	}, {
-// 		path: 'non/existent/path.txt',
-// 		content: false
-// 	}]
-// })
+test.cb('writeTo a non existent path', writeToPromiseAndCallbackStyleMacro, {
+	write : 'failing promise',
+	writeToPath: 'non/existent/path.txt',
+	expectError: 'Error getting the content of "{{{writeToPath}}}" => mock failing promise error',
+	assertAllFilesExist: [{
+		path: 'non/existent/path.txt',
+		content: false
+	}]
+})
 
-// writeToTestPromiseAndCallbackStyle('writeTo a non existent path using write with a failing function', {
-// 	writerConfig: {
-// 		write: mockFailingAsyncFunction()
-// 	},
-// 	testDirectory: {
-// 		title: 'write-to-an-non-existent-path-using-write-with-a-failing-function',
-// 		template: 'must-be-preserved'
-// 	},
-// 	writeTo: 'non/existent/path.txt',
-// 	expectError: 'Error getting the content of "{{{writeToPath}}}" => callback function error',
-// 	assertAllFilesExist: [{
-// 		path: 'must-be-preserved.txt',
-// 		content: 'must-be-preserved'
-// 	}, {
-// 		path: 'non/existent/path.txt',
-// 		content: false
-// 	}]
-// })
+test.cb('writeTo a non existent path', writeToPromiseAndCallbackStyleMacro, {
+	write : 'failing function',
+	writeToPath: 'non/existent/path.txt',
+	expectError: 'Error getting the content of "{{{writeToPath}}}" => mock failing function error',
+	assertAllFilesExist: [{
+		path: 'non/existent/path.txt',
+		content: false
+	}]
+})
 
-// writeToTestPromiseAndCallbackStyle('writeTo a non existent path using copy with a failing Promise', {
-// 	writerConfig: {
-// 		copy: mockFailingPromise()
-// 	},
-// 	testDirectory: {
-// 		title: 'write-to-an-non-existent-path-using-copy-with-a-failing-promise',
-// 		template: 'must-be-preserved'
-// 	},
-// 	writeTo: 'non/existent/path.txt',
-// 	expectError: 'Error getting the original to copy to "{{{writeToPath}}}" => promise error',
-// 	assertAllFilesExist: [{
-// 		path: 'must-be-preserved.txt',
-// 		content: 'must-be-preserved'
-// 	}, {
-// 		path: 'non/existent/path.txt',
-// 		content: false
-// 	}]
-// })
+test.cb('writeTo a non existent path', writeToPromiseAndCallbackStyleMacro, {
+	copy : 'failing promise',
+	writeToPath: 'non/existent/path.txt',
+	expectError: 'Error getting the original to copy to "{{{writeToPath}}}" => mock failing promise error',
+	assertAllFilesExist: [{
+		path: 'non/existent/path.txt',
+		content: false
+	}]
+})
 
-// writeToTestPromiseAndCallbackStyle('writeTo a non existent path using copy with a failing function', {
-// 	writerConfig: {
-// 		copy: mockFailingAsyncFunction()
-// 	},
-// 	testDirectory: {
-// 		title: 'write-to-an-non-existent-path-using-copy-with-a-failing-function',
-// 		template: 'must-be-preserved'
-// 	},
-// 	writeTo: 'non/existent/path.txt',
-// 	expectError: 'Error getting the original to copy to "{{{writeToPath}}}" => callback function error',
-// 	assertAllFilesExist: [{
-// 		path: 'must-be-preserved.txt',
-// 		content: 'must-be-preserved'
-// 	}, {
-// 		path: 'non/existent/path.txt',
-// 		content: false
-// 	}]
-// })
+test.cb('writeTo a non existent path', writeToPromiseAndCallbackStyleMacro, {
+	copy : 'failing function',
+	writeToPath: 'non/existent/path.txt',
+	expectError: 'Error getting the original to copy to "{{{writeToPath}}}" => mock failing function error',
+	assertAllFilesExist: [{
+		path: 'non/existent/path.txt',
+		content: false
+	}]
+})
 
 /*-------------------------------------------------*/
 /*-------------------------------------------------*/
@@ -281,43 +225,35 @@ test.cb([writeToPromiseStyleMacro], {
 
 const writerPossibilities = require('../settings/file-writer.test-config');
 
-testWriteToPossibilities(writerPossibilities);
-testWriteToOptionsPossibilities(writerPossibilities);
-testDependenciesThrowingAnError(writerPossibilities);
+test.cb(writeToPromiseAndCallbackStyleMacro, {
+	write: 'string',
+	expectFileWasCreated: true
+})
 
-function testWriteToPossibilities(possibilities){
-	possibilities.forEach(({
-		write = null,
-		copy = null
-	}) => {
-		function writeToTest(title, expectedFileBasePath = null, relative = false, custom_cwd = false){
-			const expectedFile = `${dashify(title)}.txt`;
-			let expectedContent = `${title} -- file content`;
+test.cb('writeTo a non existent path', writeToPromiseAndCallbackStyleMacro, {
+	write: 'string',
+	writeToPath: 'unexistent/path/to/file.txt',
+	expectFileWasCreated: true
+})
 
-			const fullExpectedFilePath = expectedFileBasePath ? path.join(expectedFileBasePath, expectedFile) : expectedFile;
+test.cb('writeTo a relative path', writeToPromiseAndCallbackStyleMacro, {
+	write: 'string',
+	writeToRelativePath: 'relative/path/to/file.txt',
+	expectFileWasCreated: true
+})
 
-			const types = (write || copy).split(' ');
-			const lastType = types[types.length - 1];
+test.cb('writeTo a relative path with a custom cwd', writeToPromiseAndCallbackStyleMacro, {
+	write: 'string',
+	writeToRelativePath: 'relative/path/to/file.txt',
+	expectFileWasCreated: true,
+	writeToDependencies: {
+		cwd: true
+	}
+})
 
-			writeToTestPromiseAndCallbackStyle(title, {
-				writerConfigMockParams: [{write, copy}, expectedContent],
-				testDirectory: {title: dashify(title), relative},
-				writeTo: fullExpectedFilePath,
-				custom_cwd,
-				assertAllFilesExist: [{
-					path: fullExpectedFilePath,
-					content: lastType === 'directory' ? true : expectedContent,
-					relative
-				}]
-			});
-		}
-
-		writeToTest(`writeTo using ${write ? 'write' : 'copy'} with ${write || copy}`);
-		writeToTest(`writeTo a non existent path using ${write ? 'write' : 'copy'} with ${write || copy}`, 'unexistent/path/to');
-		writeToTest(`writeTo a relative path using ${write ? 'write' : 'copy'} with ${write || copy}`, 'relative/path/to', /*relative*/true);
-		writeToTest(`writeTo a relative path using ${write ? 'write' : 'copy'} with ${write || copy} and a custom cwd`, 'relative/path/to', /*relative*/true, /*custom_cwd*/true);
-	});
-}
+//testWriteToPossibilities(writerPossibilities);
+//testWriteToOptionsPossibilities(writerPossibilities);
+//testDependenciesThrowingAnError(writerPossibilities);
 
 function testWriteToOptionsPossibilities(possibilities){
 	const FileWriter = requireFromIndex('sources/file-writer');
@@ -476,111 +412,5 @@ function testDependenciesThrowingAnError(possibilities) {
 			throwingErrorDependenciesTest(`writeTo using ${write ? 'write' : 'copy'} with ${write || copy} and the dependency "${dep}" throwing an error`);
 			throwingErrorDependenciesTest(`writeTo a relative path using ${write ? 'write' : 'copy'} with ${write || copy} and the dependency "${dep}" throwing an error`, /*relative*/ true);
 		});
-	});
-}
-
-/*-------------------------------------------------*/
-/*-------------------------------------------------*/
-/*-------------------------------------------------*/
-
-function writeToTestPromiseAndCallbackStyle(title, {
-	writerConfig = null,
-	writerConfigMockParams = null,
-	testDirectory,
-	writeTo,
-	writeToDependencies = undefined,
-	custom_cwd = false,
-	expectError,
-	assertAllFilesExist
-}) {
-	assert((writerConfig && writerConfigMockParams === null) || (writerConfigMockParams && writerConfig === null));
-
-	test.cb(title, t => {
-		const FileWriter = requireFromIndex('sources/file-writer');
-
-		if (writerConfig) {
-			testWithConfig(writerConfig)
-		}
-		else{
-			mockFileWriterOptionsObject(writerConfigMockParams[0], writerConfigMockParams[1], writerConfig => {
-				testWithConfig(writerConfig);
-			});
-		}
-
-		function testWithConfig(conf){
-			const writer = new FileWriter(conf);
-
-			t.plan(1);
-			createTestDirectory(testDirectory, directory => {
-				const writeToPromise = writer.writeTo(custom_cwd ? writeTo : directory.join(writeTo), null, Object.assign({
-					cwd : custom_cwd ?  directory.absolutePath : undefined
-				}, writeToDependencies));
-
-				assert(writeToPromise instanceof Promise);
-
-				if(expectError){
-					writeToPromise.then(()=>{t.fail();}).catch(err => {
-						assert.equal(err.message, expectError.replace('{{{writeToPath}}}', directory.join(writeTo)));
-
-						if (assertAllFilesExist) {
-							directory.assertAllFilesExist(assertAllFilesExist, ()=>{t.pass();t.end();})
-						}
-						else{
-							t.pass();t.end();
-						}
-					});
-				}
-				else if(assertAllFilesExist){
-					writeToPromise.then(()=>{
-						directory.assertAllFilesExist(assertAllFilesExist, ()=>{t.pass();t.end();})
-					}).catch(err => {throw err});
-				}
-				else{
-					t.pass();t.end();
-				}
-			});
-		}
-	});
-
-	const callbackTestDirectory = Object.assign({}, testDirectory);
-	callbackTestDirectory.title += '-callback-style';
-	test.cb(`${title} - callback style`, t => {
-		const FileWriter = requireFromIndex('sources/file-writer');
-
-		if (writerConfig) {
-			testWithConfig(writerConfig)
-		}
-		else{
-			mockFileWriterOptionsObject(writerConfigMockParams[0], writerConfigMockParams[1], writerConfig => {
-				testWithConfig(writerConfig);
-			});
-		}
-
-		function testWithConfig(conf){
-			const writer = new FileWriter(conf);
-
-			t.plan(1);
-			createTestDirectory(callbackTestDirectory, directory => {
-				const writeToResult = writer.writeTo(custom_cwd ? writeTo : directory.join(writeTo), err => {
-					if(expectError){
-						assert.equal(err.message, expectError.replace('{{{writeToPath}}}', directory.join(writeTo)));
-					}
-					else{
-						assert(!err);
-					}
-
-					if (assertAllFilesExist) {
-						directory.assertAllFilesExist(assertAllFilesExist, ()=>{t.pass();t.end()})
-					}
-					else{
-						t.pass();t.end();
-					}
-				}, Object.assign({
-					cwd : custom_cwd ?  directory.absolutePath : undefined
-				}, writeToDependencies));
-
-				assert.equal(writeToResult, null);
-			});
-		}
 	});
 }

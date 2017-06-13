@@ -6,18 +6,18 @@ const mockFileWriterCopyOptionValue = require('./mock-file-writer-copy-option-va
 function mockFileWriterOptionsObject({
 	write = null,
 	copy = null
-}, expectedContent, callback) {
+}, stringContent, callback) {
 	if ((!write && !copy) || !!write === !!copy) {
 		throw new Error('Please provide a write value or a copy value');
 	}
 
 	if (write) {
-		mockFileWriterWriteOptionValue(write, expectedContent, writeOptionValue => {
+		mockFileWriterWriteOptionValue(write, stringContent, writeOptionValue => {
 			callback({ write : writeOptionValue }, null);
 		});
 	}
 	else{
-		mockFileWriterCopyOptionValue(copy, expectedContent, (copyOptionValue, pathToCopy) => {
+		mockFileWriterCopyOptionValue(copy, stringContent, (copyOptionValue, pathToCopy) => {
 			callback({ copy : copyOptionValue }, pathToCopy);
 		});
 	}
