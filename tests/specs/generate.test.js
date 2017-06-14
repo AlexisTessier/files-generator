@@ -14,41 +14,7 @@ const requireFromIndex = require('../utils/require-from-index');
 const createTestDirectory = require('../utils/create-test-directory');
 
 const FileWriter = requireFromIndex('sources/file-writer');
-class mockFileWriter extends FileWriter{
-	constructor({
-		write = null,
-		copy = null,
-		encoding = null
-	} = {}){
-		super({
-			write: 'write'
-		});
-
-		this.constructorCallCount = this.constructorCallCount ? this.constructorCallCount+1 : 1;
-		this.constructorCalled = {
-			write, copy, encoding
-		};
-	}
-
-	writeTo(destinationPath = null, callback = null, {
-		fs = null,
-		isDirectory = null,
-		mkdirp = null,
-		cwd = null
-	} = {}){
-		this.writeToCalledCount = this.writeToCalledCount ? this.writeToCalledCount+1 : 1;
-		this.writeToCalled = {
-			destinationPath, callback, fs, isDirectory, mkdirp, cwd
-		};
-
-		if(callback){
-			callback();
-		}
-		else{
-			return Promise.resolve();
-		}
-	}
-}
+const mockFileWriter = require('../')
 
 test('type and api', t => {
 	const generateFromIndex = requireFromIndex('index');
@@ -72,6 +38,18 @@ test.skip('generate.copy', t => {
 
 	assert(typeof generate.copy === 'function');
 });
+
+function generatePromiseStyleMacro(t) {
+	// body...
+}
+//generatePromiseStyleMacro.title = (providedTitle, info) => `${providedTitle} - promise style`
+
+function generateCallbackStyleMacro(t) {
+	// body...
+}
+//generateCallbackStyleMacro.title = (providedTitle, info) => `${providedTitle} - callback style`
+
+const generatePromiseAndCallbackStyleMacro = [generatePromiseStyleMacro, generateCallbackStyleMacro];
 
 const possibleGenerateConfigsTypes = [
 	'generate config object',
