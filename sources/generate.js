@@ -5,8 +5,8 @@ const assert = require('better-assert');
 const FileWriter = require('./file-writer');
 const isStream = require('is-stream');
 
-function generate(generateConfig, {
-} = {}, callback) {
+function generate(generateConfig, callback, {
+} = {}) {
 	assert(typeof generateConfig === 'object');
 
 	const configKeys = Object.keys(generateConfig);

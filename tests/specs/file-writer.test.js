@@ -115,7 +115,7 @@ function writeToPromiseStyleMacro(t, testVariant){
 		else{
 			writeToPromise.then(()=>{
 				assertAllFilesExist(()=>{t.pass();t.end();})
-			}).catch(err => {assert.equal(!!err, false, `${t.title} shouldn't throw error`)});
+			}).catch(err => {assert(!err, `${t.title} shouldn't throw error => ${err ? err.message : ''}`)});
 		}
 	});
 }
@@ -140,7 +140,7 @@ function writeToCallbackStyleMacro(t, testVariant){
 				assert.equal(err.message, expectedErrorMessage);
 			}
 			else{
-				assert(!err, `${t.title} shouldn't throw error`);
+				assert(!err, `${t.title} shouldn't throw error => ${err ? err.message : ''}`);
 			}
 
 			assertAllFilesExist(()=>{t.pass();t.end()})

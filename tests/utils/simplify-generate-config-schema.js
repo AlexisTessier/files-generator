@@ -58,8 +58,6 @@ function simplifyGenerateConfigSchema(configSchema) {
 		simplifiedSchema[simplifiedKey] = simplifiedType;
 	}
 
-	console.log(simplifiedSchema);
-
 	return simplifiedSchema;
 }
 
