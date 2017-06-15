@@ -38,7 +38,7 @@ function generateBefore(t, {
 	t.plan(1);
 
 	createTestDirectory({
-		title: dashify(t.title),
+		title: dashify(t.title).replace(/(-)+/g, '-'),
 		template: 'must-be-preserved'
 	}, destDirectory => {
 		const prefixedConfigSchema = {};

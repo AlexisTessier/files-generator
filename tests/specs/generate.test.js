@@ -11,6 +11,8 @@ const createGenerateConfigObjectsSchemas = require('../utils/create-generate-con
 const simplifyGenerateConfigSchema = require('../utils/simplify-generate-config-schema');
 const generateBefore = require('../utils/generate-before');
 
+const FileWriter = requireFromIndex('sources/file-writer');
+
 test('type and api', t => {
 	const generateFromIndex = requireFromIndex('index');
 	const generate = requireFromIndex('sources/generate');
@@ -94,6 +96,8 @@ const generateConfigObjectKeyValuesTypes = [
 	'true for directory',
 	'buffer',
 	'stream',
+	'generate.write()',
+	'generate.copy()'
 	// 'valid generate config', //will nest the paths
 ];
 
@@ -107,12 +111,20 @@ test('generate.write() is a function', t => {
 	const generate = requireFromIndex('sources/generate');
 
 	assert(typeof generate.write === 'function');
+
+	const writer = generate.write('file-content');
+
+	assert(writer instanceof FileWriter);
 });
 
 test('generate.copy() is a function', t => {
 	const generate = requireFromIndex('sources/generate');
 
 	assert(typeof generate.copy === 'function');
+
+	const writer = generate.copy('file-content');
+
+	assert(writer instanceof FileWriter);
 });
 
 test.todo('generate options')

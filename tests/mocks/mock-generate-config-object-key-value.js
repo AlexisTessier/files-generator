@@ -1,28 +1,61 @@
 'use strict';
 
+const fs = require('fs');
+
 const intoStream = require('into-stream');
+
+const requireFromIndex = require('../utils/require-from-index');
+const createTestDirectory = require('../utils/create-test-directory');
 
 const mockFileWriter = require('./mock-file-writer');
 
-function mockGenerateConfigObjectKeyValue(valueType, content) {
+const generate = requireFromIndex('sources/generate');
+
+function mockGenerateConfigObjectKeyValue(valueType, content, configCallback) {
 	if(valueType === 'content as string'){
-		return content;
+		configCallback(content);
+		return;
 	}
 
 	if(valueType === 'true for directory'){
-		return true
+		configCallback(true);
+		return;
 	}
 
 	if(valueType === 'buffer'){
-		return Buffer.from(content)
+		configCallback(Buffer.from(content));
+		return;
 	}
 
 	if(valueType === 'stream'){
-		return intoStream(content)
+		configCallback(intoStream(content));
+		return;
 	}
 
 	if (valueType === 'instance of FileWriter') {
-		return new mockFileWriter();
+		configCallback(new mockFileWriter());
+		return;
+	}
+
+	if (valueType === 'generate.write()') {
+		configCallback(generate.write(content));
+		return;
+	}
+
+	if (valueType === 'generate.copy()') {
+		createTestDirectory({
+			title: 'generate-copy-mock'
+		}, directory => {
+			const fileToCopy = directory.join('generate-copy-mock-file.txt');
+
+			fs.writeFile(fileToCopy, content, err => {
+				if(err){throw err;return;}
+
+				configCallback(generate.copy(fileToCopy));
+			});
+		});
+
+		return;
 	}
 
 	throw new Error(`mockGenerateConfigObjectKeyValue: ${valueType} is not a handled type`)

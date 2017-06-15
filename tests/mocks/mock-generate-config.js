@@ -20,16 +20,18 @@ function mockGenerateConfig(configSchema, configCallback) {
 	for(const filePath in configSchema){
 		const entry = configSchema[filePath];
 
-		actualConfig[filePath] = mockGenerateConfigObjectKeyValue(entry.type, entry.content);
+		mockGenerateConfigObjectKeyValue(entry.type, entry.content, configValue => {
+			actualConfig[filePath] = configValue;
 
-		if (entry.type === 'instance of FileWriter') {
-			configFileWriters.push({
-				writer: actualConfig[filePath],
-				destinationPath: filePath
-			});
-		}
+			if (entry.type === 'instance of FileWriter') {
+				configFileWriters.push({
+					writer: actualConfig[filePath],
+					destinationPath: filePath
+				});
+			}
 
-		checkedCount++;poll();
+			checkedCount++;poll();
+		});
 	}
 }
 

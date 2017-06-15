@@ -8,6 +8,8 @@ const contentAsString = 'sg';
 const trueForDirectory = 'd';
 const buffer = 'b';
 const stream = 'sm';
+const generateWrite = 'gw';
+const generateCopy = 'gc';
 
 /**
  * @description - provide a more readable and ava test titles compatible version of a generate config schema
@@ -49,6 +51,14 @@ function simplifyGenerateConfigSchema(configSchema) {
 
 			case 'stream':
 				simplifiedType = i(stream);
+				break;
+
+			case 'generate.write()':
+				simplifiedType = i(generateWrite);
+				break;
+
+			case 'generate.copy()':
+				simplifiedType = i(generateCopy);
 				break;
 
 			default:
