@@ -119,7 +119,9 @@ function writeToPromiseStyleMacro(t, testVariant){
 		}
 	});
 }
-writeToPromiseStyleMacro.title = (providedTitle, info) => `.writeTo() using ${info.write ? 'write' : 'copy'} with a ${info.write || info.copy} - promise style`;
+writeToPromiseStyleMacro.title = (providedTitle, info) => (
+	`${providedTitle} - .writeTo() using ${info.write ? 'write' : 'copy'} with a ${info.write || info.copy} - promise style`
+);
 
 function writeToCallbackStyleMacro(t, testVariant){
 	writeToBefore(t, testVariant, ({
@@ -147,7 +149,9 @@ function writeToCallbackStyleMacro(t, testVariant){
 		assert.equal(writeToResult, null);
 	});
 }
-writeToCallbackStyleMacro.title = (providedTitle, info) => `${providedTitle} - .writeTo() using ${info.write ? 'write' : 'copy'} with a ${info.write || info.copy} - callback style`;
+writeToCallbackStyleMacro.title = (providedTitle, info) => (
+	`${providedTitle} - .writeTo() using ${info.write ? 'write' : 'copy'} with a ${info.write || info.copy} - callback style`
+);
 
 const writeToPromiseAndCallbackStyleMacro = [writeToPromiseStyleMacro, writeToCallbackStyleMacro];
 
@@ -337,7 +341,13 @@ function writeToDependencyOptionsMacro(t, {
 		}
 	}
 }
-writeToDependencyOptionsMacro.title = (providedTitle, {write, copy, dependency, defaultOptions, callbackStyle}) => `${providedTitle} - .writeTo() using ${write ? 'write' : 'copy'} with a ${write || copy} - dependency ${dependency} ${defaultOptions ? 'default options' : 'options'} - ${callbackStyle ? 'callback' : 'promise'} style`;
+writeToDependencyOptionsMacro.title = (providedTitle, {write, copy, dependency, defaultOptions, callbackStyle}) => {
+	const use = write ? 'write' : 'copy';
+	const options = defaultOptions ? 'default options' : 'options';
+	const style = callbackStyle ? 'callback' : 'promise';
+
+	return `${providedTitle} - .writeTo() using ${use} with a ${write || copy} - dependency ${dependency} ${options} - ${style} style`
+};
 
 writerPossibilities.forEach(function setPossibilityDependencies(possibility){
 	const action = (possibility.write || possibility.copy);
