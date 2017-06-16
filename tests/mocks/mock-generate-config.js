@@ -11,39 +11,46 @@ function mockGenerateConfig(configSchema, parentFilePath, configCallback) {
 	assert(typeof parentFilePath === 'string' || !parentFilePath);
 	assert(typeof configCallback === 'function');
 
-	const actualConfig = {};
-	const configFileWriters = [];
-
-	const toCheckCount = Object.keys(configSchema).length;
-	let checkedCount = 0;
-
-	function poll(){
-		if (checkedCount >= toCheckCount) {
-			configCallback(actualConfig, configFileWriters);
-		}
-	}
-
-	poll();
-
-	for(const filePath in configSchema){
-		const entry = configSchema[filePath];
-
-		const fullFilePath = parentFilePath ? path.join(parentFilePath, filePath) : filePath;
-
-		mockGenerateConfigObjectKeyValue(entry.type, entry.content, fullFilePath, mockGenerateConfig, (configValue, nestedConfigFileWriters = []) => {
-			actualConfig[filePath] = configValue;
-
-			configFileWriters.push(...nestedConfigFileWriters);
-
-			if (entry.type === 'instance of FileWriter') {
-				configFileWriters.push({
-					writer: actualConfig[filePath],
-					destinationPath: fullFilePath
-				});
-			}
-
-			checkedCount++;poll();
+	if(configSchema.type === 'generate config object'){
+		mockGenerateConfig(configSchema.content, parentFilePath, (a, b) => {
+			configCallback(a, b);
 		});
+	}
+	else{
+		const actualConfig = {};
+		const configFileWriters = [];
+
+		const toCheckCount = Object.keys(configSchema).length;
+		let checkedCount = 0;
+
+		function poll(){
+			if (checkedCount >= toCheckCount) {
+				configCallback(actualConfig, configFileWriters);
+			}
+		}
+
+		poll();
+
+		for(const filePath in configSchema){
+			const entry = configSchema[filePath];
+
+			const fullFilePath = parentFilePath ? path.join(parentFilePath, filePath) : filePath;
+
+			mockGenerateConfigObjectKeyValue(entry.type, entry.content, fullFilePath, mockGenerateConfig, (configValue, nestedConfigFileWriters = []) => {
+				actualConfig[filePath] = configValue;
+
+				configFileWriters.push(...nestedConfigFileWriters);
+
+				if (entry.type === 'instance of FileWriter') {
+					configFileWriters.push({
+						writer: actualConfig[filePath],
+						destinationPath: fullFilePath
+					});
+				}
+
+				checkedCount++;poll();
+			});
+		}
 	}
 }
 

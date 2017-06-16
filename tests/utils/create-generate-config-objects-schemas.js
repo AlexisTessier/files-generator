@@ -7,7 +7,7 @@ const mockFileContent = require('../mocks/mock-file-content');
 
 const maxDepth = 3;
 
-function createGenerateConfigObjectsSchemas(configType, keyValuesTypes, depth = 0) {
+function createGenerateConfigObjectsSchemas(configTypes, keyValuesTypes, depth = 0) {
 	const configObjects = [];
 	
 	const keyValuesTypesPermutations = depth === 0 ? [
@@ -17,32 +17,51 @@ function createGenerateConfigObjectsSchemas(configType, keyValuesTypes, depth = 
 		[...keyValuesTypes, ...keyValuesTypes]
 	] : [keyValuesTypes];
 
-	keyValuesTypesPermutations.forEach(possibility => {
-		const conf = {};
 
-		possibility.forEach(type => {
-			if (type === 'valid generate config') {
-				if (depth < maxDepth) {
-					conf[mockGenerateConfigObjectKeyName('directory')] = {
-						type,
-						content: createGenerateConfigObjectsSchemas(
-							configType,
-							keyValuesTypes,
-							depth+1
-						)[0]
-					}
-				}
-			}
-			else{
-				conf[mockGenerateConfigObjectKeyName(type === 'true for directory' ? 'directory' : false)] = {
-					type,
-					content: type === 'true for directory' ? true : mockFileContent()
-				}
-			}
-		});
+	configTypes.forEach(configType => {
+		switch(configType){
+			case 'generate config object':
+				keyValuesTypesPermutations.forEach(permutation => {
+					const conf = {};
 
-		configObjects.push(conf);
-	})
+					permutation.forEach(type => {
+						if (type === 'valid generate config') {
+							if (depth < maxDepth) {
+								conf[mockGenerateConfigObjectKeyName('directory')] = {
+									type,
+									content: createGenerateConfigObjectsSchemas(
+										configTypes,
+										keyValuesTypes,
+										depth+1
+									)[0]
+								}
+							}
+						}
+						else{
+							conf[mockGenerateConfigObjectKeyName(type === 'true for directory' ? 'directory' : false)] = {
+								type,
+								content: type === 'true for directory' ? true : mockFileContent()
+							}
+						}
+					});
+					
+					configObjects.push({
+						type: configType,
+						content: conf
+					});
+				});
+				break;
+
+			// case 'array of valid generate config':
+
+			// 	break;
+
+			default:
+				throw new Error(`createGenerateConfigObjectsSchemas: ${configType} is not a handled type`);
+		}
+	});
+
+	
 
 	return configObjects;
 }

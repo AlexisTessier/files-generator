@@ -2,6 +2,7 @@
 
 const simpleFilePath = 'fp';
 const deepFilePath = 'dfp';
+const generateConfigObject = 'gco';
 
 const instanceOfFileWriter = 'fwi';
 const contentAsString = 'sg';
@@ -24,12 +25,17 @@ function simplifyGenerateConfigSchema(configSchema) {
 
 	const simplifiedSchema = {};
 
+	if (configSchema.type === 'generate config object') {
+		simplifiedSchema[i(generateConfigObject)] = simplifyGenerateConfigSchema(configSchema.content);
+		return simplifiedSchema;
+	}
+
 	for(const key in configSchema){
-		const simplifiedKey = i(
+		const entry = configSchema[key];
+
+		let simplifiedKey = i(
 			(key.match(/\//g) || []).length ? deepFilePath : simpleFilePath
 		);
-
-		const entry = configSchema[key];
 		
 		let simplifiedType = null;
 

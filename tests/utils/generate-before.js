@@ -12,25 +12,46 @@ const createTestDirectory = require('../utils/create-test-directory');
 function getExpectedFilesFromConfigSchema(configSchema){
 	const expectedFiles = [];
 
-	for(const filePath in configSchema){
-		const entry = configSchema[filePath];
 
-		if (entry.type === 'valid generate config') {
-			expectedFiles.push(...getExpectedFilesFromConfigSchema(entry.content, filePath).map(expectedFile => {
-				expectedFile.path = path.join(filePath, expectedFile.path);
-				return expectedFile;
-			}));
-		}
-		else{
-			expectedFiles.push({
-				path: filePath,
-				content: entry.content,
-				from: entry.type
-			});
+	if (configSchema.type === 'generate config object') {
+		expectedFiles.push(...getExpectedFilesFromConfigSchema(configSchema.content));
+	}
+	else{
+		for(const filePath in configSchema){
+			const entry = configSchema[filePath];
+
+			if (entry.type === 'valid generate config') {
+				expectedFiles.push(...getExpectedFilesFromConfigSchema(entry.content, filePath).map(expectedFile => {
+					expectedFile.path = path.join(filePath, expectedFile.path);
+					return expectedFile;
+				}));
+			}
+			else{
+				expectedFiles.push({
+					path: filePath,
+					content: entry.content,
+					from: entry.type
+				});
+			}
 		}
 	}
 
 	return expectedFiles;
+}
+
+function prefixConfigSchema(configSchema, directory) {
+	const prefixedConfigSchema = {}; 
+	if (configSchema.type === 'generate config object') {
+		prefixedConfigSchema.type = configSchema.type;
+		prefixedConfigSchema.content = prefixConfigSchema(configSchema.content, directory);
+	}
+	else{
+		for(const filePath in configSchema){
+			prefixedConfigSchema[directory.join(filePath)] = configSchema[filePath];
+		}
+	}
+	
+	return prefixedConfigSchema;
 }
 
 function generateBefore(t, {
@@ -50,11 +71,7 @@ function generateBefore(t, {
 		title: dashify(t.title).replace(/(-)+/g, '-'),
 		template: 'must-be-preserved'
 	}, destDirectory => {
-		const prefixedConfigSchema = {};
-
-		for(const filePath in configSchema){
-			prefixedConfigSchema[destDirectory.join(filePath)] = configSchema[filePath];
-		}
+		const prefixedConfigSchema = prefixConfigSchema(configSchema, destDirectory);
 
 		mockGenerateConfig(prefixedConfigSchema, null, (generateConfig, configFileWriters) => {
 			coreTest({

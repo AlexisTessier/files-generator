@@ -85,20 +85,75 @@ const generatePromiseAndCallbackStyleMacro = [generatePromiseStyleMacro, generat
 
 const generateConfigObjectTypes = [
 	'generate config object',
-	// 'array of valid generate config',
-	// 'promise resolving a valid generate config',
-	// 'function resolving a valid generate config'
+	// 'array of generate config object',
+	// 'array of promise resolving a generate config object',
+	// 'array of function resolving a generate config object',
+	// 'mixed array of valid generate config',
+
+	// 'promise resolving a generate config object',
+	// 'promise resolving an array of generate config object',
+	// 'promise resolving a promise resolving a generate config object',
+	// 'promise resolving a function resolving a generate config object',
+
+	// 'function resolving a generate config object'
+	// 'function resolving an array of generate config object',
+	// 'function resolving a function resolving a generate config object'
+	// 'function resolving a promise resolving a generate config object'
 ];
 
 const generateConfigObjectKeyValuesTypes = [
 	'instance of FileWriter',
+	//'promise resolving an instance of FileWriter',
+	//'promise resolving a promise resolving an instance of FileWriter',
+	//'promise resolving a function resolving an instance of FileWriter',
+	//'function resolving an instance of FileWriter'
+	//'function resolving a function resolving an instance of FileWriter'
+	//'function resolving a promise resolving an instance of FileWriter'
 	'content as string',
+	//'promise resolving a content as string',
+	//'promise resolving a promise resolving a content as string',
+	//'promise resolving a function resolving a content as string',
+	//'function resolving a content as string'
+	//'function resolving a function resolving a content as string'
+	//'function resolving a promise resolving a content as string'
 	'true for directory',
+	//'promise resolving true for directory',
+	//'promise resolving a promise resolving true for directory',
+	//'promise resolving a function resolving true for directory',
+	//'function resolving true for directory'
+	//'function resolving a function resolving true for directory'
+	//'function resolving a promise resolving true for directory'
 	'buffer',
+	//'promise resolving a buffer',
+	//'promise resolving a promise resolving a buffer',
+	//'promise resolving a function resolving a buffer',
+	//'function resolving a buffer'
+	//'function resolving a function resolving a buffer'
+	//'function resolving a promise resolving a buffer'
 	'stream',
+	//'promise resolving a stream',
+	//'promise resolving a promise resolving a stream',
+	//'promise resolving a function resolving a stream',
+	//'function resolving a stream'
+	//'function resolving a function resolving a stream'
+	//'function resolving a promise resolving a stream'
 	'generate.write()',
+	//'promise resolving generate.write()',
+	//'promise resolving a promise resolving generate.write()',
+	//'promise resolving a function resolving generate.write()',
+	//'function resolving generate.write()'
+	//'function resolving a function resolving generate.write()'
+	//'function resolving a promise resolving generate.write()'
 	'generate.copy()',
-	'valid generate config' //will nest the paths
+	//'promise resolving generate.copy()',
+	//'promise resolving a promise resolving generate.copy()',
+	//'promise resolving a function resolving generate.copy()',
+	//'function resolving generate.copy()'
+	//'function resolving a function resolving generate.copy()'
+	//'function resolving a promise resolving generate.copy()'
+	
+	//will nest the paths
+	//...generateConfigObjectTypes
 ];
 
 createGenerateConfigObjectsSchemas(generateConfigObjectTypes, generateConfigObjectKeyValuesTypes).forEach(configSchema => {

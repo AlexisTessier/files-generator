@@ -2,7 +2,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const assert = require('assert');
+const assert = require('better-assert');
+const nativeAssert = require('assert');
 
 const isDirectory = require('is-directory');
 
@@ -48,7 +49,7 @@ module.exports = function assertAllFilesExist(expectedFiles, assertAllFilesExist
 			isDirectory(expectedFilePath, (err, dir) => {
 				try{
 					if (err){throw err;}
-					assert.equal(dir, true, `${expectedFilePath} should be a directory`);
+					nativeAssert.equal(dir, true, `${expectedFilePath} should be a directory`);
 				}
 				catch(err){
 					throw err;
@@ -61,8 +62,8 @@ module.exports = function assertAllFilesExist(expectedFiles, assertAllFilesExist
 		else{
 			fs.readFile(expectedFilePath, {encoding: 'utf-8'}, (err, fileContent) => {
 				try{
-					assert.equal(!err, true, `${expectedFilePath} wasn't created`);
-					assert.equal(`${expectedFilePath} contains => ${fileContent}`, `${expectedFilePath} contains => ${expectedFile.content}`);
+					nativeAssert.equal(!err, true, `${expectedFilePath} wasn't created`);
+					nativeAssert.equal(`${expectedFilePath} contains => ${fileContent}`, `${expectedFilePath} contains => ${expectedFile.content}`);
 				}
 				catch(err){
 					throw err;
