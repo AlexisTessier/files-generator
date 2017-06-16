@@ -10,6 +10,7 @@ const buffer = 'b';
 const stream = 'sm';
 const generateWrite = 'gw';
 const generateCopy = 'gc';
+const nestedGenerateConfig = 'ngc';
 
 /**
  * @description - provide a more readable and ava test titles compatible version of a generate config schema
@@ -18,7 +19,7 @@ function simplifyGenerateConfigSchema(configSchema) {
 	let count = 0;
 
 	function i(s){
-		return `${s}_${++count}`
+		return `${s}${++count}`
 	}
 
 	const simplifiedSchema = {};
@@ -59,6 +60,10 @@ function simplifyGenerateConfigSchema(configSchema) {
 
 			case 'generate.copy()':
 				simplifiedType = i(generateCopy);
+				break;
+
+			case 'valid generate config':
+				simplifiedType = i(nestedGenerateConfig);
 				break;
 
 			default:

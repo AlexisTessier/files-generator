@@ -59,7 +59,7 @@ function generateCallbackStyleMacro(t, testVariant) {
 	}) => {
 		const generate = requireFromIndex('sources/generate');
 
-		const generateResult = generate(generateConfig, err => {
+		const generateResult = generate(generateConfig, {}, err => {
 			if(expectedErrorMessage){
 				assert.equal(err.message, expectedErrorMessage);
 			}
@@ -97,8 +97,8 @@ const generateConfigObjectKeyValuesTypes = [
 	'buffer',
 	'stream',
 	'generate.write()',
-	'generate.copy()'
-	// 'valid generate config', //will nest the paths
+	'generate.copy()',
+	'valid generate config' //will nest the paths
 ];
 
 createGenerateConfigObjectsSchemas(generateConfigObjectTypes, generateConfigObjectKeyValuesTypes).forEach(configSchema => {
@@ -127,11 +127,11 @@ test('generate.copy() is a function', t => {
 	assert(writer instanceof FileWriter);
 });
 
-test.todo('generate options')
+test.todo('generate options');
 
 // const availableOptions = {
-// 	override: [true, false],
-// 	backupStrategy: [false, null, 'trash', 'backup-file', 'custom-strategy'],
+// 	override: [true, false, Error],
+// 	backupStrategy: [false, null, 'trash', 'backup-file', function customStrategy(){}],
 // 	backupStrategyOptions: {},
 // 	onFileWriten: null,
 // 	rootPath: ''

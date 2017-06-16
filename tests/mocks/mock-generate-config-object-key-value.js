@@ -1,6 +1,8 @@
 'use strict';
 
 const fs = require('fs');
+const assert = require('better-assert');
+const path = require('path');
 
 const intoStream = require('into-stream');
 
@@ -11,7 +13,13 @@ const mockFileWriter = require('./mock-file-writer');
 
 const generate = requireFromIndex('sources/generate');
 
-function mockGenerateConfigObjectKeyValue(valueType, content, configCallback) {
+function mockGenerateConfigObjectKeyValue(valueType, content, parentFilePath, mockGenerateConfig, configCallback) {
+	assert(typeof valueType === 'string');
+	assert(typeof parentFilePath === 'string' || !parentFilePath);
+	assert(typeof mockGenerateConfig === 'function');
+	assert(typeof configCallback === 'function');
+
+
 	if(valueType === 'content as string'){
 		configCallback(content);
 		return;
@@ -55,6 +63,13 @@ function mockGenerateConfigObjectKeyValue(valueType, content, configCallback) {
 			});
 		});
 
+		return;
+	}
+
+	if (valueType === 'valid generate config') {
+		mockGenerateConfig(content, parentFilePath, (configValue, configFileWriters) => {
+			configCallback(configValue, configFileWriters);
+		});
 		return;
 	}
 

@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require('path');
 const assert = require('assert');
 
 const dashify = require('dashify');
@@ -14,11 +15,19 @@ function getExpectedFilesFromConfigSchema(configSchema){
 	for(const filePath in configSchema){
 		const entry = configSchema[filePath];
 
-		expectedFiles.push({
-			path: filePath,
-			content: entry.content,
-			from: entry.type
-		});
+		if (entry.type === 'valid generate config') {
+			expectedFiles.push(...getExpectedFilesFromConfigSchema(entry.content, filePath).map(expectedFile => {
+				expectedFile.path = path.join(filePath, expectedFile.path);
+				return expectedFile;
+			}));
+		}
+		else{
+			expectedFiles.push({
+				path: filePath,
+				content: entry.content,
+				from: entry.type
+			});
+		}
 	}
 
 	return expectedFiles;
@@ -47,7 +56,7 @@ function generateBefore(t, {
 			prefixedConfigSchema[destDirectory.join(filePath)] = configSchema[filePath];
 		}
 
-		mockGenerateConfig(prefixedConfigSchema, (generateConfig, configFileWriters) => {
+		mockGenerateConfig(prefixedConfigSchema, null, (generateConfig, configFileWriters) => {
 			coreTest({
 				generateConfig,
 				expectedErrorMessage: expectError || null,

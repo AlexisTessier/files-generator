@@ -14,6 +14,27 @@ const writeContents = new WeakMap();
 const copyContents = new WeakMap();
 
 /** @private */
+function isValidWriteValue(write) {
+	return (
+		write === true /* empty directory */ ||
+		typeof write === 'string' ||
+		write instanceof Buffer ||
+		isStream(write) ||
+		write instanceof Promise ||
+		typeof write === 'function'
+	);
+}
+
+/** @private */
+function isValidCopyValue(copy) {
+	return (
+		typeof copy === 'string' ||
+		copy instanceof Promise ||
+		typeof copy === 'function'
+	);
+}
+
+/** @private */
 module.exports = class FileWriter{
 	constructor({
 		write = null,
@@ -24,14 +45,14 @@ module.exports = class FileWriter{
 
 		if (write) {
 			assert(copy === null);
-			assert(write === true /* empty directory */ || typeof write === 'string' || write instanceof Buffer || isStream(write) || write instanceof Promise || typeof write === 'function');
+			assert(isValidWriteValue(write));
 
 			writeContents.set(this, write);
 		}
 
 		if (copy) {
 			assert(write === null);
-			assert(typeof copy === 'string' || copy instanceof Promise || typeof copy === 'function');
+			assert(isValidCopyValue(copy));
 
 			copyContents.set(this, copy);
 		}

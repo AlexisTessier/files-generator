@@ -1,8 +1,16 @@
 'use strict';
 
+const path = require('path');
+
+const assert = require('better-assert');
+
 const mockGenerateConfigObjectKeyValue = require('./mock-generate-config-object-key-value');
 
-function mockGenerateConfig(configSchema, configCallback) {
+function mockGenerateConfig(configSchema, parentFilePath, configCallback) {
+	assert(typeof configSchema === 'object');
+	assert(typeof parentFilePath === 'string' || !parentFilePath);
+	assert(typeof configCallback === 'function');
+
 	const actualConfig = {};
 	const configFileWriters = [];
 
@@ -20,13 +28,17 @@ function mockGenerateConfig(configSchema, configCallback) {
 	for(const filePath in configSchema){
 		const entry = configSchema[filePath];
 
-		mockGenerateConfigObjectKeyValue(entry.type, entry.content, configValue => {
+		const fullFilePath = parentFilePath ? path.join(parentFilePath, filePath) : filePath;
+
+		mockGenerateConfigObjectKeyValue(entry.type, entry.content, fullFilePath, mockGenerateConfig, (configValue, nestedConfigFileWriters = []) => {
 			actualConfig[filePath] = configValue;
+
+			configFileWriters.push(...nestedConfigFileWriters);
 
 			if (entry.type === 'instance of FileWriter') {
 				configFileWriters.push({
 					writer: actualConfig[filePath],
-					destinationPath: filePath
+					destinationPath: fullFilePath
 				});
 			}
 

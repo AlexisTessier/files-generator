@@ -1,61 +1,61 @@
 'use strict';
 
+const path = require('path');
 const assert = require('better-assert');
 
-const FileWriter = require('./file-writer');
 const isStream = require('is-stream');
 
-function generate(generateConfig, callback, {
-} = {}) {
+const FileWriter = require('./file-writer');
+
+function generate(generateConfig, {
+	parentDestinationPath
+} = {}, callback) {
 	assert(typeof generateConfig === 'object');
+	assert(typeof parentDestinationPath === 'string' || !parentDestinationPath);
 
 	const configKeys = Object.keys(generateConfig);
-	const options = {};
+	const options = {
+	};
 
-	new Promise((resolve, reject) => {
-		if (configKeys.length === 0) {
-			resolve();
-		}
-		else{
-			Promise.all(configKeys.map(destinationPath => {
-				const content = generateConfig[destinationPath];
+	(configKeys.length === 0 ? Promise.resolve() : (
+		Promise.all(configKeys.map(destinationPath => {
+			const fullDestinationPath = parentDestinationPath ? path.join(parentDestinationPath, destinationPath) : destinationPath;
 
-				if (content instanceof FileWriter) {
-					let writeToPromise = null;
-					let _err = null;
+			const content = generateConfig[destinationPath];
 
-					try{
-						writeToPromise = content.writeTo(destinationPath);
-					}
-					catch(err){
-						_err = err;
-						reject(err);
-					}
+			if (content instanceof FileWriter) {
+				let writeToPromise = null;
+				let _err = null;
 
-					if (writeToPromise && !_err) {
-						return writeToPromise;
-					}
+				try{
+					writeToPromise = content.writeTo(fullDestinationPath);
 				}
-				else if (
-					typeof content === 'string' ||
-					content instanceof Buffer ||
-					isStream(content) ||
-					content === true
-				) {
-					return generate({
-						[destinationPath]: generateWrite(content)
-					}, options);
+				catch(err){
+					_err = err;
 				}
-				else{
-					reject(new Error(`${content} (${typeof content}) is not a valid file content.`));
-				}
-			})).then(()=>resolve()).catch(err => reject(err));
-		}
-	}).then(()=>{
-		cb(null)
-	}).catch(err=>{
-		cb(err)
-	});
+
+				return _err ? Promise.reject(_err) : writeToPromise;
+			}
+			else if (
+				typeof content === 'string' ||
+				content instanceof Buffer ||
+				isStream(content) ||
+				content === true
+			) {
+				return generate({
+					[fullDestinationPath]: generateWrite(content)
+				}, options);
+			}
+			else if(typeof content === 'object') {
+				return generate(content, Object.assign({}, options, {
+					parentDestinationPath: fullDestinationPath
+				}));
+			}
+			else{
+				return Promise.reject(new Error(`${content} (${typeof content}) is not a valid file content.`));
+			}
+		}))
+	)).then(()=>cb()).catch(err=>cb(err));
 
 	function cb(err) {
 		process.nextTick(()=>{
