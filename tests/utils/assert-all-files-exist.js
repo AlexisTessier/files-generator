@@ -23,14 +23,13 @@ module.exports = function assertAllFilesExist(expectedFiles, assertAllFilesExist
 
 	expectedFiles.forEach(expectedFile => {
 		assert(typeof expectedFile === 'object');
+		
 		assert(typeof expectedFile.path === 'string');
+		assert(path.isAbsolute(expectedFile.path));
+
 		assert(typeof expectedFile.content === 'string' || typeof expectedFile.content === 'boolean');
 
-		let expectedFilePath = expectedFile.path;
-
-		if(expectedFile.relative === true){
-			expectedFilePath = path.join(process.cwd(), expectedFilePath);
-		}
+		const expectedFilePath = expectedFile.path;
 
 		if (expectedFile.content === false) {
 			fs.access(expectedFilePath, err => {
@@ -62,7 +61,7 @@ module.exports = function assertAllFilesExist(expectedFiles, assertAllFilesExist
 		else{
 			fs.readFile(expectedFilePath, {encoding: 'utf-8'}, (err, fileContent) => {
 				try{
-					nativeAssert.equal(!err, true, `${expectedFilePath} wasn't created`);
+					nativeAssert.equal(!err, true, `${expectedFilePath} should exist`);
 					nativeAssert.equal(`${expectedFilePath} contains => ${fileContent}`, `${expectedFilePath} contains => ${expectedFile.content}`);
 				}
 				catch(err){
