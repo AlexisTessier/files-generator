@@ -12,8 +12,8 @@
     "extra-dep": "dependency-check ./package.json --extra",
     "check-dependencies": "dependency-check ./package.json",
     "test": "npm run lint && npm run check-dependencies && npm run coverage",
-    "watch-test": "ava --watch --timeout=2000",
-    "coverage": "nyc ava --timeout=2000 && npm run report",
+    "watch-test": "ava --watch --timeout=$npm_package_ava_timeout",
+    "coverage": "nyc ava --timeout=$npm_package_ava_timeout && npm run report",
     "update-coverage": "npm run coverage && node build/update-coverage",
     "dev-server": "concurrently \"ttab npm run dev-server-coverage\" \"npm run dev-server-documentation\"",
     "dev-server-coverage": "here -w -d ./coverage",
@@ -91,12 +91,14 @@
     "recursive-copy": "^2.0.6",
     "serve-here": "^3.2.0",
     "shelljs": "^0.7.7",
+    "sinon": "^2.3.5",
     "temp": "^0.8.3"
   },
   "ava": {
     "source": [
       "sources/**/*.js"
-    ]
+    ],
+    "timeout": 10000
   },
   "nyc": {
     "exclude": [

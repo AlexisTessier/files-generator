@@ -1,16 +1,17 @@
 'use strict';
 
 let fileNameCount = 0;
-function mockGenerateConfigObjectKeyName(directory = false){
-	fileNameCount++;
-
+function mockGenerateConfigObjectKeyName({
+	depth = (fileNameCount++),
+	directory = false
+} = {}){
 	const ext = directory === 'directory' ? '' : '.txt';
 
-	if (fileNameCount % 3 === 0) {
+	if (depth % 3 === 0) {
 		return `mock-folder-name-${fileNameCount}/mock-subfolder-name-${fileNameCount}/mock-file-name-${fileNameCount}${ext}`;
 	}
 
-	if (fileNameCount % 2 === 0) {
+	if (depth % 2 === 0) {
 		return `mock-folder-name-${fileNameCount}/mock-file-name-${fileNameCount}${ext}`;
 	}
 	

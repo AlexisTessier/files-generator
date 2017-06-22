@@ -4,6 +4,7 @@ const path = require('path');
 
 const assert = require('assert');
 const test = require('ava');
+const sinon = require('sinon');
 
 const dashify = require('dashify');
 
@@ -81,7 +82,9 @@ test.cb('generate a file from a simple string content', testDirectoryMacro, (t, 
 
 	t.plan(2);
 
-	const filePath = mockGenerateConfigObjectKeyName();
+	const filePath = mockGenerateConfigObjectKeyName({
+		depth: 1
+	});
 	const fileContent = mockFileContent();
 
 	generate({
@@ -94,6 +97,70 @@ test.cb('generate a file from a simple string content', testDirectoryMacro, (t, 
 		directory.assertAllFilesExist([...directory.initialFilesList, {
 			path: filePath,
 			content: fileContent
+		}], ()=>{
+			t.pass();
+			t.end();
+		});
+	});
+});
+
+test.cb('generate files from a simple string content to a non-existent paths', testDirectoryMacro, (t, directory) => {
+	const generate = requireFromIndex('sources/generate')();
+
+	t.plan(2);
+
+	const filePath1 = mockGenerateConfigObjectKeyName({
+		depth: 2
+	});
+	const fileContent1 = mockFileContent();
+
+	const filePath2 = mockGenerateConfigObjectKeyName({
+		depth: 3
+	});
+	const fileContent2 = mockFileContent();
+
+	generate({
+		[path.join(directory.path, filePath1)]: fileContent1,
+		[path.join(directory.path, filePath2)]: fileContent2
+	});
+
+	generate.on('finish', ()=>{
+		t.pass();
+
+		directory.assertAllFilesExist([...directory.initialFilesList, {
+			path: filePath1,
+			content: fileContent1
+		}, {
+			path: filePath2,
+			content: fileContent2
+		}], ()=>{
+			t.pass();
+			t.end();
+		});
+	});
+});
+
+test.cb('override writeFile function using the instance generator', testDirectoryMacro, (t, directory) => {
+	const writeFile = sinon.spy((filePath, content, options, cb) => cb());
+	const generate = requireFromIndex('sources/generate')({
+		writeFile
+	});
+
+	t.plan(2);
+
+	const filePath = mockGenerateConfigObjectKeyName();
+	const fileContent = mockFileContent();
+
+	generate({
+		[path.join(directory.path, filePath)]: fileContent
+	});
+
+	generate.on('finish', ()=>{
+		t.pass();
+
+		directory.assertAllFilesExist([...directory.initialFilesList, {
+			path: filePath,
+			content: false
 		}], ()=>{
 			t.pass();
 			t.end();
