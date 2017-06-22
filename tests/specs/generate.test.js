@@ -158,12 +158,6 @@ test.cb('generate.off()', t => {
 /*------------------*/
 /*------------------*/
 
-test.beforeEach(t => {
-	t.context.writeFileDefaultOptions = {
-		encoding: 'utf-8'
-	};
-});
-
 function testDirectoryMacro(t, core) {
 	createTestDirectory({
 		title: dashify(t.title),
@@ -172,6 +166,29 @@ function testDirectoryMacro(t, core) {
 	}, directory => {
 		core(t, directory);
 	});
+}
+
+test.beforeEach(t => {
+	t.context.writeFileDefaultOptions = {
+		encoding: 'utf-8',
+		cwd: process.cwd()
+	};
+});
+
+function writeFileCallExpectOptionsMacro(t, writeFile, call, expectedOptions){
+	const options = writeFile.getCall(call).args[2];
+	expectedOptions = Object.assign({}, t.context.writeFileDefaultOptions, expectedOptions);
+
+	t.is(options.encoding, expectedOptions.encoding);
+}
+
+function generateMockingWriteFileMacro(t, core) {
+	const writeFile = mockWriteFile();
+	const generate = requireFromIndex('sources/generate')({
+		writeFile
+	});
+
+	core(t, writeFile, generate);
 }
 
 /*------------------*/
@@ -184,12 +201,13 @@ test.cb('generate a file from a simple string content', testDirectoryMacro, (t, 
 	t.plan(2);
 
 	const filePath = mockGenerateConfigObjectKeyName({
-		depth: 1
+		depth: 1,
+		absolute: directory.path
 	});
 	const fileContent = mockFileContent();
 
 	generate({
-		[path.join(directory.path, filePath)]: fileContent
+		[filePath]: fileContent
 	});
 
 	generate.on('finish', ()=>{
@@ -211,18 +229,20 @@ test.cb('generate files from a simple string content to a non-existent paths', t
 	t.plan(2);
 
 	const filePath1 = mockGenerateConfigObjectKeyName({
-		depth: 2
+		depth: 2,
+		absolute: directory.path
 	});
 	const fileContent1 = mockFileContent();
 
 	const filePath2 = mockGenerateConfigObjectKeyName({
-		depth: 3
+		depth: 3,
+		absolute: directory.path
 	});
 	const fileContent2 = mockFileContent();
 
 	generate({
-		[path.join(directory.path, filePath1)]: fileContent1,
-		[path.join(directory.path, filePath2)]: fileContent2
+		[filePath1]: fileContent1,
+		[filePath2]: fileContent2
 	});
 
 	generate.on('finish', ()=>{
@@ -251,12 +271,13 @@ test.cb('default encoding', testDirectoryMacro, (t, directory) => {
 	t.plan(2);
 
 	const filePath = mockGenerateConfigObjectKeyName({
-		depth: 1
+		depth: 1,
+		absolute: directory.path
 	});
 	const fileContent = mockFileContent();
 
 	generate({
-		[path.join(directory.path, filePath)]: fileContent
+		[filePath]: fileContent
 	});
 
 	generate.on('finish', ()=>{
@@ -283,12 +304,13 @@ test.cb('override encoding using the instance generator', testDirectoryMacro, (t
 	t.plan(2);
 
 	const filePath = mockGenerateConfigObjectKeyName({
-		depth: 1
+		depth: 1,
+		absolute: directory.path
 	});
 	const fileContent = mockFileContent();
 
 	generate({
-		[path.join(directory.path, filePath)]: fileContent
+		[filePath]: fileContent
 	});
 
 	generate.on('finish', ()=>{
@@ -313,12 +335,13 @@ test.cb('override encoding using the generate function', testDirectoryMacro, (t,
 	t.plan(2);
 
 	const filePath = mockGenerateConfigObjectKeyName({
-		depth: 1
+		depth: 1,
+		absolute: directory.path
 	});
 	const fileContent = mockFileContent();
 
 	generate({
-		[path.join(directory.path, filePath)]: fileContent
+		[filePath]: fileContent
 	}, {
 		encoding
 	});
@@ -337,6 +360,194 @@ test.cb('override encoding using the generate function', testDirectoryMacro, (t,
 	});
 });
 
+test.cb('override encoding using the generate function after using the instance generator', testDirectoryMacro, (t, directory) => {
+	const encoding = 'latin1';
+
+	const generate = requireFromIndex('sources/generate')({
+		encoding: 'utf-8'
+	});
+
+	t.plan(2);
+
+	const filePath = mockGenerateConfigObjectKeyName({
+		depth: 1,
+		absolute: directory.path
+	});
+	const fileContent = mockFileContent();
+
+	generate({
+		[filePath]: fileContent
+	}, {
+		encoding
+	});
+
+	generate.on('finish', ()=>{
+		t.pass();
+
+		directory.assertAllFilesExist([...directory.initialFilesList, {
+			path: filePath,
+			content: fileContent,
+			encoding
+		}], ()=>{
+			t.pass();
+			t.end();
+		});
+	});
+});
+
+/*---------------*/
+/*----- cwd -----*/
+/*---------------*/
+
+test.cb('default cwd', generateMockingWriteFileMacro, (t, writeFile, generate) => {
+	const filePath = mockGenerateConfigObjectKeyName({
+		depth: 1
+	});
+	const fileContent = mockFileContent();
+
+	generate({
+		[filePath]: fileContent
+	});
+
+	generate.on('finish', ()=>{
+		t.true(writeFile.calledOnce);
+
+		const expectedPath = path.join(t.context.writeFileDefaultOptions.cwd, filePath);
+		t.true(writeFile.withArgs(expectedPath, fileContent).calledOnce);
+
+		t.end();
+	});
+});
+
+test.cb('override cwd using the instance generator', t => {
+	const cwd = '/cwd/override';
+
+	const writeFile = mockWriteFile();
+	const generate = requireFromIndex('sources/generate')({
+		cwd,
+		writeFile
+	});
+
+	const filePath = mockGenerateConfigObjectKeyName();
+	const fileContent = mockFileContent();
+
+	generate({
+		[filePath]: fileContent
+	});
+
+	generate.on('finish', ()=>{
+		t.true(writeFile.calledOnce);
+
+		const expectedPath = path.join(cwd, filePath);
+		t.true(writeFile.withArgs(expectedPath, fileContent).calledOnce);
+
+		t.end();
+	});
+});
+
+test.cb('override cwd using the generate function', t => {
+	const cwd = '/cwd/override';
+
+	const writeFile = mockWriteFile();
+	const generate = requireFromIndex('sources/generate')();
+
+	const filePath = mockGenerateConfigObjectKeyName();
+	const fileContent = mockFileContent();
+
+	generate({
+		[filePath]: fileContent
+	}, {
+		cwd,
+		writeFile
+	});
+
+	generate.on('finish', ()=>{
+		t.true(writeFile.calledOnce);
+
+		const expectedPath = path.join(cwd, filePath);
+		t.true(writeFile.withArgs(expectedPath, fileContent).calledOnce);
+
+		t.end();
+	});
+});
+
+test.cb('override cwd using the generate function after using the instance generator', t => {
+	const cwd = '/cwd/override';
+
+	const writeFile = mockWriteFile();
+	const generate = requireFromIndex('sources/generate')({
+		cwd: '/other/cwd/override'
+	});
+
+	const filePath = mockGenerateConfigObjectKeyName();
+	const fileContent = mockFileContent();
+
+	generate({
+		[filePath]: fileContent
+	}, {
+		cwd,
+		writeFile
+	});
+
+	generate.on('finish', ()=>{
+		t.true(writeFile.calledOnce);
+
+		const expectedPath = path.join(cwd, filePath);
+		t.true(writeFile.withArgs(expectedPath, fileContent).calledOnce);
+
+		t.end();
+	});
+});
+
+test('throw error if cwd using the instance generator is not an absolute path', t => {
+	const cwd = 'cwd/relative/override';
+
+	const cwdRelativeError = t.throws(()=>{
+		const generate = requireFromIndex('sources/generate')({cwd});
+	});
+
+	t.is(cwdRelativeError.message, `You must provide an absolute cwd path. "${cwd}" is a relative one.`)
+});
+
+test('throw error if cwd using the generate function is not an absolute path', t => {
+	const cwd = 'cwd/relative/override';
+
+	const writeFile = mockWriteFile();
+	const generate = requireFromIndex('sources/generate')();
+
+	const filePath = mockGenerateConfigObjectKeyName();
+	const fileContent = mockFileContent();
+
+	const cwdRelativeError = t.throws(()=>{
+		generate({
+			[filePath]: fileContent
+		}, {
+			cwd,
+			writeFile
+		});
+	});
+
+	t.is(cwdRelativeError.message, `You must provide an absolute cwd path. "${cwd}" is a relative one.`)
+});
+
+test('throw error if cwd using generate.use() is not an absolute path', t => {
+	const cwd = 'cwd/relative/override';
+
+	const writeFile = mockWriteFile();
+	const generate = requireFromIndex('sources/generate')();
+
+	const filePath = mockGenerateConfigObjectKeyName();
+	const fileContent = mockFileContent();
+
+	const cwdRelativeError = t.throws(()=>{
+		generate({
+			[filePath]: generate.use(fileContent, {cwd})
+		});
+	});
+
+	t.is(cwdRelativeError.message, `You must provide an absolute cwd path. "${cwd}" is a relative one.`)
+});
+
 /*--------------------*/
 /*----- writeFile ----*/
 /*--------------------*/
@@ -349,20 +560,20 @@ test.cb('override writeFile function using the instance generator', testDirector
 
 	t.plan(4);
 
-	const filePath = mockGenerateConfigObjectKeyName();
+	const filePath = mockGenerateConfigObjectKeyName({
+		absolute: directory.path
+	});
 	const fileContent = mockFileContent();
 
-	const expectedFilePath = path.join(directory.path, filePath);
-
 	generate({
-		[expectedFilePath]: fileContent
+		[filePath]: fileContent
 	});
 
 	generate.on('finish', ()=>{
 		t.pass();
 
 		t.true(writeFile.calledOnce);
-		t.true(writeFile.withArgs(expectedFilePath, fileContent).calledOnce);
+		t.true(writeFile.withArgs(filePath, fileContent).calledOnce);
 
 		directory.assertAllFilesExist([...directory.initialFilesList, {
 			path: filePath,
@@ -380,13 +591,13 @@ test.cb('override writeFile function using the generate function', testDirectory
 
 	t.plan(4);
 
-	const filePath = mockGenerateConfigObjectKeyName();
+	const filePath = mockGenerateConfigObjectKeyName({
+		absolute: directory.path
+	});
 	const fileContent = mockFileContent();
 
-	const expectedFilePath = path.join(directory.path, filePath);
-
 	generate({
-		[expectedFilePath]: fileContent
+		[filePath]: fileContent
 	}, {
 		writeFile
 	});
@@ -395,7 +606,7 @@ test.cb('override writeFile function using the generate function', testDirectory
 		t.pass();
 
 		t.true(writeFile.calledOnce);
-		t.true(writeFile.withArgs(expectedFilePath, fileContent).calledOnce);
+		t.true(writeFile.withArgs(filePath, fileContent).calledOnce);
 
 		directory.assertAllFilesExist([...directory.initialFilesList, {
 			path: filePath,
@@ -413,18 +624,19 @@ test.cb('override writeFile function using the instance generator - default opti
 		writeFile
 	});
 
-	const filePath = mockGenerateConfigObjectKeyName();
+	const filePath = mockGenerateConfigObjectKeyName({ absolute: '/' });
 	const fileContent = mockFileContent();
 
 	generate({
 		[filePath]: fileContent
 	});
 
-	const expectedOptions = t.context.writeFileDefaultOptions;
-
 	generate.on('finish', ()=>{
 		t.true(writeFile.calledOnce);
-		t.true(writeFile.withArgs(filePath, fileContent, expectedOptions).calledOnce);
+
+		t.true(writeFile.withArgs(filePath, fileContent).calledOnce);
+		writeFileCallExpectOptionsMacro(t, writeFile, 0, {});
+
 		t.end();
 	});
 });
@@ -433,7 +645,7 @@ test.cb('override writeFile function using the generate function - default optio
 	const writeFile = mockWriteFile();
 	const generate = requireFromIndex('sources/generate')();
 
-	const filePath = mockGenerateConfigObjectKeyName();
+	const filePath = mockGenerateConfigObjectKeyName({ absolute: '/' });
 	const fileContent = mockFileContent();
 
 	generate({
@@ -442,11 +654,12 @@ test.cb('override writeFile function using the generate function - default optio
 		writeFile
 	});
 
-	const expectedOptions = t.context.writeFileDefaultOptions;
-
 	generate.on('finish', ()=>{
 		t.true(writeFile.calledOnce);
-		t.true(writeFile.withArgs(filePath, fileContent, expectedOptions).calledOnce);
+
+		t.true(writeFile.withArgs(filePath, fileContent).calledOnce);
+		writeFileCallExpectOptionsMacro(t, writeFile, 0, {});
+
 		t.end();
 	});
 });
@@ -464,20 +677,19 @@ test.cb('override writeFile function using the instance generator - encoding opt
 		encoding
 	});
 
-	const filePath = mockGenerateConfigObjectKeyName();
+	const filePath = mockGenerateConfigObjectKeyName({ absolute: '/' });
 	const fileContent = mockFileContent();
 
 	generate({
 		[filePath]: fileContent
 	});
 
-	const expectedOptions = Object.assign({}, t.context.writeFileDefaultOptions, {
-		encoding
-	});
-
 	generate.on('finish', ()=>{
 		t.true(writeFile.calledOnce);
-		t.true(writeFile.withArgs(filePath, fileContent, expectedOptions).calledOnce);
+
+		t.true(writeFile.withArgs(filePath, fileContent).calledOnce);
+		writeFileCallExpectOptionsMacro(t, writeFile, 0, { encoding });
+
 		t.end();
 	});
 });
@@ -490,20 +702,19 @@ test.cb('override writeFile function using the instance generator - encoding opt
 		writeFile
 	});
 
-	const filePath = mockGenerateConfigObjectKeyName();
+	const filePath = mockGenerateConfigObjectKeyName({ absolute : '/' });
 	const fileContent = mockFileContent();
 
 	generate({
 		[filePath]: fileContent
 	}, { encoding });
 
-	const expectedOptions = Object.assign({}, t.context.writeFileDefaultOptions, {
-		encoding
-	});
-
 	generate.on('finish', ()=>{
 		t.true(writeFile.calledOnce);
-		t.true(writeFile.withArgs(filePath, fileContent, expectedOptions).calledOnce);
+
+		t.true(writeFile.withArgs(filePath, fileContent).calledOnce);
+		writeFileCallExpectOptionsMacro(t, writeFile, 0, { encoding });
+
 		t.end();
 	});
 });
@@ -514,7 +725,7 @@ test.cb('override writeFile function using the generate function - encoding opti
 	const writeFile = mockWriteFile();
 	const generate = requireFromIndex('sources/generate')();
 
-	const filePath = mockGenerateConfigObjectKeyName();
+	const filePath = mockGenerateConfigObjectKeyName({ absolute: '/' });
 	const fileContent = mockFileContent();
 
 	generate({
@@ -524,13 +735,12 @@ test.cb('override writeFile function using the generate function - encoding opti
 		encoding
 	});
 
-	const expectedOptions = Object.assign({}, t.context.writeFileDefaultOptions, {
-		encoding
-	});
-
 	generate.on('finish', ()=>{
 		t.true(writeFile.calledOnce);
-		t.true(writeFile.withArgs(filePath, fileContent, expectedOptions).calledOnce);
+
+		t.true(writeFile.withArgs(filePath, fileContent).calledOnce);
+		writeFileCallExpectOptionsMacro(t, writeFile, 0, { encoding });
+
 		t.end();
 	});
 });
@@ -543,7 +753,7 @@ test.cb('override writeFile function using the generate function - encoding opti
 		encoding
 	});
 
-	const filePath = mockGenerateConfigObjectKeyName();
+	const filePath = mockGenerateConfigObjectKeyName({ absolute: '/' });
 	const fileContent = mockFileContent();
 
 	generate({
@@ -552,29 +762,15 @@ test.cb('override writeFile function using the generate function - encoding opti
 		writeFile
 	});
 
-	const expectedOptions = Object.assign({}, t.context.writeFileDefaultOptions, {
-		encoding
-	});
-
 	generate.on('finish', ()=>{
 		t.true(writeFile.calledOnce);
-		t.true(writeFile.withArgs(filePath, fileContent, expectedOptions).calledOnce);
+
+		t.true(writeFile.withArgs(filePath, fileContent).calledOnce);
+		writeFileCallExpectOptionsMacro(t, writeFile, 0, { encoding });
+
 		t.end();
 	});
 });
-
-/*------------------*/
-/*------------------*/
-/*------------------*/
-
-function generateMockingWriteFileMacro(t, core) {
-	const writeFile = mockWriteFile();
-	const generate = requireFromIndex('sources/generate')({
-		writeFile
-	});
-
-	core(t, writeFile, generate);
-}
 
 /*----------------------------*/
 /*------- generate.use -------*/
@@ -591,7 +787,7 @@ test('generate.use() type', t => {
 
 test.cb('generate.use() simple string as content', generateMockingWriteFileMacro, (t, writeFile, generate) => {
 
-	const filePath = mockGenerateConfigObjectKeyName();
+	const filePath = mockGenerateConfigObjectKeyName({ absolute:'/' });
 	const fileContent = mockFileContent();
 
 	generate({
@@ -601,6 +797,7 @@ test.cb('generate.use() simple string as content', generateMockingWriteFileMacro
 	generate.on('finish', ()=>{
 		t.true(writeFile.calledOnce);
 		t.true(writeFile.withArgs(filePath, fileContent).calledOnce);
+		writeFileCallExpectOptionsMacro(t, writeFile, 0, {});
 		t.end();
 	});
 });
@@ -608,9 +805,9 @@ test.cb('generate.use() simple string as content', generateMockingWriteFileMacro
 test.cb('generate.use() simple string as content - override encoding', generateMockingWriteFileMacro, (t, writeFile, generate) => {
 	const encoding = 'latin1';
 
-	const filePath1 = mockGenerateConfigObjectKeyName();
+	const filePath1 = mockGenerateConfigObjectKeyName({ absolute:'/' });
 	const fileContent1 = mockFileContent();
-	const filePath2 = mockGenerateConfigObjectKeyName();
+	const filePath2 = mockGenerateConfigObjectKeyName({ absolute:'/' });
 	const fileContent2 = mockFileContent();
 
 	generate({
@@ -618,13 +815,33 @@ test.cb('generate.use() simple string as content - override encoding', generateM
 		[filePath2]: generate.use(fileContent2, {encoding})
 	});
 
-	const expectedOptions1 = t.context.writeFileDefaultOptions;
-	const expectedOptions2 = {encoding};
-
 	generate.on('finish', () => {
 		t.is(writeFile.callCount, 2);
-		t.true(writeFile.withArgs(filePath1, fileContent1, expectedOptions1).calledOnce);
-		t.true(writeFile.withArgs(filePath2, fileContent2, expectedOptions2).calledOnce);
+		t.true(writeFile.withArgs(filePath1, fileContent1).calledOnce);
+		writeFileCallExpectOptionsMacro(t, writeFile, 0, {});
+
+		t.true(writeFile.withArgs(filePath2, fileContent2).calledOnce);
+		writeFileCallExpectOptionsMacro(t, writeFile, 1, { encoding });
+		t.end();
+	});
+});
+
+test.cb('generate.use() simple string as content - override cwd', generateMockingWriteFileMacro, (t, writeFile, generate) => {
+	const cwd = '/cwd/override';
+
+	const filePath = mockGenerateConfigObjectKeyName();
+	const fileContent = mockFileContent();
+
+	generate({
+		[filePath]: generate.use(fileContent, {cwd}),
+	});
+
+	generate.on('finish', () => {
+		t.true(writeFile.calledOnce);
+
+		const expectedPath = path.join(cwd, filePath);
+		t.true(writeFile.withArgs(expectedPath, fileContent).calledOnce);
+
 		t.end();
 	});
 });
@@ -632,9 +849,9 @@ test.cb('generate.use() simple string as content - override encoding', generateM
 test.cb('generate.use() simple string as content - override writeFile', generateMockingWriteFileMacro, (t, writeFile, generate) => {
 	const writeFileBis = mockWriteFile();
 
-	const filePath1 = mockGenerateConfigObjectKeyName();
+	const filePath1 = mockGenerateConfigObjectKeyName({ absolute:'/' });
 	const fileContent1 = mockFileContent();
-	const filePath2 = mockGenerateConfigObjectKeyName();
+	const filePath2 = mockGenerateConfigObjectKeyName({ absolute:'/' });
 	const fileContent2 = mockFileContent();
 
 	generate({
@@ -651,56 +868,30 @@ test.cb('generate.use() simple string as content - override writeFile', generate
 	});
 });
 
-test.cb('generate.use() simple string as content - override writeFile and encoding', generateMockingWriteFileMacro, (t, writeFile, generate) => {
+test.cb('generate.use() simple string as content - override all the options', generateMockingWriteFileMacro, (t, writeFile, generate) => {
 	const encoding = 'latin1';
-	const encoding2 = 'latin2';
+	const cwd = '/cwd/override';
 
-	const writeFileBis = mockWriteFile();
-
-	const filePath1 = mockGenerateConfigObjectKeyName();
-	const fileContent1 = mockFileContent();
-	const filePath2 = mockGenerateConfigObjectKeyName();
-	const fileContent2 = mockFileContent();
-	const filePath3 = mockGenerateConfigObjectKeyName();
-	const fileContent3 = mockFileContent();
-	const filePath4 = mockGenerateConfigObjectKeyName();
-	const fileContent4 = mockFileContent();
-	const filePath5 = mockGenerateConfigObjectKeyName();
-	const fileContent5 = mockFileContent();
+	const writeFile2 = mockWriteFile();
+	const filePath = mockGenerateConfigObjectKeyName();
+	const fileContent = mockFileContent();
 
 	generate({
-		[filePath1]: generate.use(fileContent1),
-		[filePath2]: generate.use(fileContent2, {
-			writeFile: writeFileBis,
-			encoding
+		[filePath]: generate.use(fileContent, {
+			writeFile: writeFile2,
+			encoding,
+			cwd
 		}),
-		[filePath3]: generate.use(fileContent3, {
-			encoding
-		}),
-		[filePath4]: generate.use(fileContent4, {
-			writeFile: writeFileBis,
-			encoding: encoding2
-		}),
-		[filePath5]: generate.use(fileContent5, {
-			writeFile: writeFileBis
-		})
 	});
 
-	const expectedOptions1 = t.context.writeFileDefaultOptions;
-	const expectedOptions2 = {encoding};
-	const expectedOptions3 = {encoding};
-	const expectedOptions4 = {encoding: encoding2};
-	const expectedOptions5 = t.context.writeFileDefaultOptions;
-
 	generate.on('finish', () => {
-		t.is(writeFile.callCount, 2);
-		t.is(writeFileBis.callCount, 3);
+		t.true(writeFile.notCalled);
+		t.true(writeFile2.calledOnce);
 
-		t.true(writeFile.withArgs(filePath1, fileContent1, expectedOptions1).calledOnce);
-		t.true(writeFileBis.withArgs(filePath2, fileContent2, expectedOptions2).calledOnce);
-		t.true(writeFile.withArgs(filePath3, fileContent3, expectedOptions3).calledOnce);
-		t.true(writeFileBis.withArgs(filePath4, fileContent4, expectedOptions4).calledOnce);
-		t.true(writeFileBis.withArgs(filePath5, fileContent5, expectedOptions5).calledOnce);
+		const expectedPath = path.join(cwd, filePath);
+		t.true(writeFile2.withArgs(expectedPath, fileContent).calledOnce);
+		writeFileCallExpectOptionsMacro(t, writeFile2, 0, { encoding });
+
 		t.end();
 	});
 });

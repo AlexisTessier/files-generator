@@ -53,7 +53,7 @@ module.exports = function createTestDirectory({
 					assert(Array.isArray(expectedFiles));
 
 					assertAllFilesExist(expectedFiles.map(file => ({
-						path: path.join(absolutePath, file.path),
+						path: path.isAbsolute(file.path) ? file.path : path.join(absolutePath, file.path),
 						content: file.content,
 						encoding: file.encoding
 					})), cb, {

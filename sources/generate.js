@@ -6,10 +6,20 @@ const path = require('path');
 const assert = require('better-assert');
 const mkdirp = require('mkdirp');
 
+/*----------------*/
+/*----------------*/
+/*----------------*/
+
+/**
+ * @private
+ */
 const listenableEvents = [
 	'write', 'finish', 'error'
 ];
 
+/**
+ * @private
+ */
 const defaultWriteFile = function writeFile(filePath, content, options, writeFileCallback) {
 	assert(typeof filePath === 'string' && path.isAbsolute(filePath));
 	assert(typeof content === 'string');
@@ -24,19 +34,53 @@ const defaultWriteFile = function writeFile(filePath, content, options, writeFil
 	});
 }
 
+/**
+ * @private
+ */
 const defaultEncoding = 'utf-8';
 
+/**
+ * @private
+ */
 class UseObject {
 	constructor(content, options){
 		Object.assign(this, {content, options})
 	}
 }
 
+/**
+ * @private
+ */
+function relativeToAbsolute(cwd, relative) {
+	assert(path.isAbsolute(cwd));
+
+	return path.isAbsolute(relative) ? relative : path.join(cwd, relative);
+}
+
+/**
+ * @private
+ */
+ function relativeCwdError(cwd) {
+ 	return new Error(`You must provide an absolute cwd path. "${cwd}" is a relative one.`);
+ }
+
+/*----------------*/
+/*----------------*/
+/*----------------*/
+
+/**
+ * @description - Generate files from different kinds of sources
+ */
 function generate({
 	writeFile = defaultWriteFile,
-	encoding = defaultEncoding
+	encoding = defaultEncoding,
+	cwd = process.cwd()
 } = {}) {
-	const _writeFile = writeFile, _encoding = encoding;
+	if(!path.isAbsolute(cwd)){
+		throw relativeCwdError(cwd);
+	}
+
+	const _writeFile = writeFile, _encoding = encoding, _cwd = cwd;
 
 	let listeners = [];
 
@@ -58,15 +102,24 @@ function generate({
 		})
 	}
 
-	function use(content, options) {
+	function use(content, options = {}) {
+		if(options.cwd && !path.isAbsolute(options.cwd)){
+			throw relativeCwdError(options.cwd);
+		}
+
 		return new UseObject(content, options);
 	}
 
 	function generateInstance(generateConfig, {
 		writeFile = _writeFile,
-		encoding = _encoding
+		encoding = _encoding,
+		cwd = _cwd
 	} = {}){
 		assert(typeof generateConfig === 'object' || !generateConfig);
+
+		if(!path.isAbsolute(cwd)){
+			throw relativeCwdError(cwd);
+		}
 
 		process.nextTick(()=>{
 			if (!generateConfig) {
@@ -82,24 +135,30 @@ function generate({
 				const writeFilehandler = err => {
 					err ? reject(err) : resolve();
 				};
-				const writeFileOptions = {encoding};
+
+				const filePathOptions = {
+					encoding,
+					writeFile,
+					cwd
+				};
 
 				if (fileContent instanceof UseObject) {
 					const fileContentOptions = fileContent.options || {};
-					const writeFileOption = fileContentOptions.writeFile || writeFile;
+					const filePathWriteFile = (fileContentOptions.writeFile || writeFile);
+					const filePathCwd = (fileContentOptions.cwd || cwd);
 
-					delete fileContentOptions.writeFile;
-
-					writeFileOption(file.path, fileContent.content,
-						Object.assign({}, writeFileOptions, fileContentOptions), 
+					filePathWriteFile(relativeToAbsolute(filePathCwd, file.path), fileContent.content,
+						Object.assign({}, filePathOptions, fileContentOptions), 
 						writeFilehandler
 					);
 				}
 				else if(typeof fileContent === 'string'){
-					writeFile(file.path, fileContent, writeFileOptions, writeFilehandler);
+					writeFile(relativeToAbsolute(cwd, file.path), fileContent, filePathOptions, writeFilehandler);
 				}
-			}))).then(()=>{
+			}))).then(() => {
 				emit('finish');
+			}).catch(err => {
+				emit('error', err);
 			});
 		});
 	}
