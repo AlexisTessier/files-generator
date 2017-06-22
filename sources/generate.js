@@ -24,10 +24,21 @@ const defaultWriteFile = function writeFile(filePath, content, options, writeFil
 	});
 }
 
+const defaultEncoding = 'utf-8';
+
+class UseObject {
+	constructor(content, options){
+		Object.assign(this, {content, options})
+	}
+}
+
 function generate({
-	writeFile = defaultWriteFile
+	writeFile = defaultWriteFile,
+	encoding = defaultEncoding
 } = {}) {
-	const listeners = [];
+	const _writeFile = writeFile, _encoding = encoding;
+
+	let listeners = [];
 
 	function emit(eventToEmit, ...args) {
 		listeners.filter(({event}) => event === eventToEmit).forEach(({listener})=>listener(...args))
@@ -35,12 +46,26 @@ function generate({
 
 	function on(event, listener) {
 		listeners.push({event, listener});
-	};
+	}
 
-	function off() {
-	};
+	function off(eventToUnbind, listenerToUnbind) {
+		listeners = listeners.filter(({event, listener}) => {
+			if (event === eventToUnbind) {
+				return !(listener === listenerToUnbind);
+			}
 
-	function generateInstance(generateConfig){
+			return true;
+		})
+	}
+
+	function use(content, options) {
+		return new UseObject(content, options);
+	}
+
+	function generateInstance(generateConfig, {
+		writeFile = _writeFile,
+		encoding = _encoding
+	} = {}){
 		assert(typeof generateConfig === 'object' || !generateConfig);
 
 		process.nextTick(()=>{
@@ -52,9 +77,27 @@ function generate({
 				path: filePath,
 				content: generateConfig[filePath]
 			})).map(file => new Promise((resolve, reject) => {
-				writeFile(file.path, file.content, {encoding: 'utf-8'}, err => {
+
+				const fileContent = file.content;
+				const writeFilehandler = err => {
 					err ? reject(err) : resolve();
-				});
+				};
+				const writeFileOptions = {encoding};
+
+				if (fileContent instanceof UseObject) {
+					const fileContentOptions = fileContent.options || {};
+					const writeFileOption = fileContentOptions.writeFile || writeFile;
+
+					delete fileContentOptions.writeFile;
+
+					writeFileOption(file.path, fileContent.content,
+						Object.assign({}, writeFileOptions, fileContentOptions), 
+						writeFilehandler
+					);
+				}
+				else if(typeof fileContent === 'string'){
+					writeFile(file.path, fileContent, writeFileOptions, writeFilehandler);
+				}
 			}))).then(()=>{
 				emit('finish');
 			});
@@ -62,7 +105,7 @@ function generate({
 	}
 
 	return Object.assign(generateInstance, {
-		on, off, listenableEvents
+		on, off, use, listenableEvents
 	});
 }
 

@@ -2,12 +2,16 @@
 
 const fs = require('fs');
 const path = require('path');
-const assert = require('better-assert');
 const nativeAssert = require('assert');
 
+const assert = require('better-assert');
+
+const detectCharacterEncoding = require('detect-character-encoding');
 const isDirectory = require('is-directory');
 
-module.exports = function assertAllFilesExist(expectedFiles, assertAllFilesExistCallback) {
+module.exports = function assertAllFilesExist(expectedFiles, assertAllFilesExistCallback, {
+	ava_t = null
+} = {}) {
 	assert(Array.isArray(expectedFiles));
 
 	const toCheckCount = expectedFiles.length;
@@ -20,6 +24,13 @@ module.exports = function assertAllFilesExist(expectedFiles, assertAllFilesExist
 	}
 
 	poll();
+
+	function throwError(err) {
+		if (ava_t) {
+			return ava_t.fail(err.message);
+		}
+		throw err;
+	}
 
 	expectedFiles.forEach(expectedFile => {
 		assert(typeof expectedFile === 'object');
@@ -34,10 +45,10 @@ module.exports = function assertAllFilesExist(expectedFiles, assertAllFilesExist
 		if (expectedFile.content === false) {
 			fs.access(expectedFilePath, err => {
 				try{
-					assert(err && err.code === 'ENOENT', `${expectedFilePath} shouldn't exist`);
+					nativeAssert(err && err.code === 'ENOENT', `${expectedFilePath} shouldn't exist`);
 				}
 				catch(err){
-					throw err;
+					throwError(err);
 				}
 				finally{
 					checkedCount++;poll();
@@ -51,7 +62,7 @@ module.exports = function assertAllFilesExist(expectedFiles, assertAllFilesExist
 					nativeAssert.equal(dir, true, `${expectedFilePath} should be a directory`);
 				}
 				catch(err){
-					throw err;
+					throwError(err)
 				}
 				finally{
 					checkedCount++;poll();
@@ -59,13 +70,13 @@ module.exports = function assertAllFilesExist(expectedFiles, assertAllFilesExist
 			});
 		}
 		else{
-			fs.readFile(expectedFilePath, {encoding: 'utf-8'}, (err, fileContent) => {
+			fs.readFile(expectedFilePath, {encoding: expectedFile.encoding || 'utf-8'}, (err, fileContent) => {
 				try{
 					nativeAssert.equal(!err, true, `${expectedFilePath} should exist`);
 					nativeAssert.equal(`${expectedFilePath} contains => ${fileContent}`, `${expectedFilePath} contains => ${expectedFile.content}`);
 				}
 				catch(err){
-					throw err;
+					throwError(err)
 				}
 				finally{
 					checkedCount++;poll();

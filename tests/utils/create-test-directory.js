@@ -14,7 +14,8 @@ temp.track();
 
 module.exports = function createTestDirectory({
 	title,
-	template = null
+	template = null,
+	ava_t = null
 }, createTestDirectoryCallback) {
 	assert(typeof title === 'string' && title.length >= 2);
 	assert(!template || (typeof template === 'string' && template.length >= 2));
@@ -53,8 +54,11 @@ module.exports = function createTestDirectory({
 
 					assertAllFilesExist(expectedFiles.map(file => ({
 						path: path.join(absolutePath, file.path),
-						content: file.content
-					})), cb);
+						content: file.content,
+						encoding: file.encoding
+					})), cb, {
+						ava_t
+					});
 				},
 			};
 

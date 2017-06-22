@@ -3,7 +3,7 @@
 const randomstring = require("randomstring");
 
 function mockFileContent(){
-	return `file-content-${randomstring.generate()}`;
+	return `à é @ # & _ ° % $ £ ^^ ù = + / ? ç ! è § \t \n file-content-${randomstring.generate()}`;
 }
 
 module.exports = mockFileContent;
