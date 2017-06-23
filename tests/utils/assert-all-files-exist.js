@@ -6,7 +6,6 @@ const nativeAssert = require('assert');
 
 const assert = require('better-assert');
 
-const detectCharacterEncoding = require('detect-character-encoding');
 const isDirectory = require('is-directory');
 
 module.exports = function assertAllFilesExist(expectedFiles, assertAllFilesExistCallback, {
