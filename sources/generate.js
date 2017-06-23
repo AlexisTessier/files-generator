@@ -20,7 +20,7 @@ const listenableEvents = [
 /**
  * @private
  */
-const defaultWriteFile = function writeFile(filePath, content, options, writeFileCallback) {
+function defaultWriteFile(filePath, content, options, writeFileCallback) {
 	assert(typeof filePath === 'string' && path.isAbsolute(filePath));
 	assert(typeof content === 'string');
 	assert(typeof options === 'object');
@@ -60,9 +60,9 @@ function relativeToAbsolute(cwd, relative) {
 /**
  * @private
  */
- function relativeCwdError(cwd) {
- 	return new Error(`You must provide an absolute cwd path. "${cwd}" is a relative one.`);
- }
+function relativeCwdError(cwd) {
+	return new Error(`You must provide an absolute cwd path. "${cwd}" is a relative one.`);
+}
 
 /*----------------*/
 /*----------------*/
@@ -132,9 +132,9 @@ function generate({
 			})).map(file => new Promise((resolve, reject) => {
 
 				const fileContent = file.content;
-				const writeFilehandler = err => {
+				function writeFilehandler(err){
 					err ? reject(err) : resolve();
-				};
+				}
 
 				const filePathOptions = {
 					encoding,
