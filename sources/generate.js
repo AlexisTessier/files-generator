@@ -69,9 +69,14 @@ function relativeCwdError(cwd) {
 /*----------------*/
 
 /**
- * @description - Generate files from different kinds of sources
+ * @description - Create a generate function using the defined options
+ *
+ * @param {object} [options=] - An object containing the generate function options.
+ * @param {function} [options.writeFile=] - The function which will be used to create files and/or directories.
+ * @param {string} [options.encoding='utf-8'] - The encoding to use when writing files.
+ * @param {string} [options.cwd=process.cwd()] - The cwd used if you try to generate some relative paths. Must be an absolute path.
  */
-function generate({
+function generateGenerate({
 	writeFile = defaultWriteFile,
 	encoding = defaultEncoding,
 	cwd = process.cwd()
@@ -110,7 +115,13 @@ function generate({
 		return new UseObject(content, options);
 	}
 
-	function generateInstance(generateConfig, {
+	/**
+	 * @description - Generate files from different kinds of inputs
+	 * 
+	 * @param {GenerateConfig} generateConfig - The generate config contains all the file paths to generate.
+	 * @param {object} options - This options object can be used to overide some options defined in the generateGenerate function.
+	 */
+	function generate(generateConfig, {
 		writeFile = _writeFile,
 		encoding = _encoding,
 		cwd = _cwd
@@ -163,9 +174,9 @@ function generate({
 		});
 	}
 
-	return Object.assign(generateInstance, {
+	return Object.assign(generate, {
 		on, off, use, listenableEvents
 	});
 }
 
-module.exports = generate;
+module.exports = generateGenerate;
