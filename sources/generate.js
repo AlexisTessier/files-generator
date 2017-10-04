@@ -159,7 +159,7 @@ function generateGenerate({
 					const filePathCwd = (fileContentOptions.cwd || cwd);
 
 					filePathWriteFile(relativeToAbsolute(filePathCwd, file.path), fileContent.content,
-						Object.assign({}, filePathOptions, fileContentOptions), 
+						Object.assign({}, filePathOptions, fileContentOptions),
 						writeFilehandler
 					);
 				}

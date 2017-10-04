@@ -26,7 +26,8 @@
     "build": "npm run entries && npm run documentation",
     "dev": "concurrently \"ttab npm run update-coverage\" \"ttab npm run watch-test\" \"ttab npm run watch\" \"ttab npm run dev-server\"",
     "release": "node node_modules/@alexistessier/node-module-starterkit-release-dep",
-    "release-first": "npm run release -- -- first"
+    "release-first": "npm run release -- -- first",
+    "start": "npm run dev"
   },
   "repository": {
     "type": "git",
@@ -65,40 +66,43 @@
   },
   "licenseDate": "2017-present",
   "devDependencies": {
-    "@alexistessier/es-lint-config": "^1.2.1",
-    "@alexistessier/node-module-starterkit-release-dep": "^1.2.0",
-    "ava": "^0.18.2",
-    "capitalize": "^1.0.0",
-    "concurrently": "^3.5.0",
-    "coveralls": "^2.12.0",
-    "dashify": "^0.2.2",
-    "dependency-check": "^2.9.1",
-    "documentation": "^4.0.0-rc.1",
-    "eslint": "^3.18.0",
-    "git-repo-info": "^1.4.1",
-    "github-markdown-css": "^2.8.0",
-    "glob": "^7.1.1",
-    "into-stream": "^3.1.0",
-    "jsonfile": "^3.0.0",
-    "marked": "^0.3.6",
-    "mkdirp": "^0.5.1",
-    "mustache": "^2.3.0",
-    "npm-watch": "^0.1.8",
-    "nyc": "^10.2.0",
-    "oss-license-name-to-url": "^1.2.1",
-    "randomstring": "^1.1.5",
-    "read-yaml": "^1.1.0",
-    "recursive-copy": "^2.0.6",
-    "serve-here": "^3.2.0",
-    "shelljs": "^0.7.8",
-    "sinon": "^2.3.5",
-    "temp": "^0.8.3"
+    "@alexistessier/es-lint-config": "1.5.0",
+    "@alexistessier/node-module-starterkit-release-dep": "1.7.0",
+    "ava": "0.22.0",
+    "capitalize": "1.0.0",
+    "concurrently": "3.5.0",
+    "coveralls": "3.0.0",
+    "dashify": "0.2.2",
+    "dependency-check": "2.9.1",
+    "documentation": "5.3.2",
+    "eslint": "4.8.0",
+    "git-repo-info": "1.4.1",
+    "github-markdown-css": "2.8.0",
+    "glob": "7.1.2",
+    "into-stream": "3.1.0",
+    "jsonfile": "4.0.0",
+    "mkdirp": "0.5.1",
+    "mustache": "2.3.0",
+    "npm-watch": "0.3.0",
+    "nyc": "11.2.1",
+    "oss-license-name-to-url": "1.2.1",
+    "randomstring": "1.1.5",
+    "read-yaml": "1.1.0",
+    "recursive-copy": "2.0.6",
+    "remarkable": "1.7.1",
+    "serve-here": "3.2.0",
+    "shelljs": "0.7.8",
+    "sinon": "4.0.1",
+    "temp": "0.8.3"
   },
   "ava": {
     "source": [
-      "sources/**/*.js"
+      "sources/**/*.js",
+      "tests/mocks/**/*.js",
+      "tests/utils/**/*.js",
+      "tests/**/*.macro.js"
     ],
-    "timeout": 5000
+    "timeout": 8000
   },
   "nyc": {
     "exclude": [
@@ -107,13 +111,13 @@
     ]
   },
   "dependencies": {
-    "better-assert": "^1.0.2",
-    "is-directory": "^0.3.1",
-    "is-stream": "^1.1.0",
-    "mkdirp": "^0.5.1",
-    "ncp": "^2.0.0"
+    "better-assert": "1.0.2",
+    "is-directory": "0.3.1",
+    "is-stream": "1.1.0",
+    "mkdirp": "0.5.1",
+    "ncp": "2.0.0"
   },
   "optionalDependencies": {
-    "ttab": "^0.5.1"
+    "ttab": "0.5.1"
   }
 }

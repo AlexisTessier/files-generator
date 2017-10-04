@@ -2,7 +2,6 @@
 
 const path = require('path');
 
-const assert = require('assert');
 const test = require('ava');
 const sinon = require('sinon');
 
@@ -20,14 +19,14 @@ test('type and api', t => {
 	const generateFromIndex = requireFromIndex('index');
 	const generate = requireFromIndex('sources/generate');
 
-	assert.equal(generateFromIndex, generate);
-	assert.equal(typeof generate, 'function');
+	t.is(generateFromIndex, generate);
+	t.is(typeof generate, 'function');
 });
 
 test('create new generate function', t => {
 	const generate = requireFromIndex('sources/generate')();
 
-	assert.equal(typeof generate, 'function');
+	t.is(typeof generate, 'function');
 });
 
 test('generate instance function returns null', t => {
@@ -35,37 +34,37 @@ test('generate instance function returns null', t => {
 
 	const generateResult = generate();
 
-	assert.strictEqual(generateResult, undefined);
+	t.is(generateResult, undefined);
 });
 
 test('generate.on is a function', t => {
 	const g = requireFromIndex('sources/generate');
 
-	assert.equal(g.on, undefined);
+	t.is(g.on, undefined);
 
 	const generate = g();
 
-	assert.equal(typeof generate.on, 'function');
+	t.is(typeof generate.on, 'function');
 });
 
 test('generate.off is a function', t => {
 	const g = requireFromIndex('sources/generate');
 
-	assert.equal(g.off, undefined);
+	t.is(g.off, undefined);
 
 	const generate = g();
 
-	assert.equal(typeof generate.off, 'function');
+	t.is(typeof generate.off, 'function');
 });
 
 test('generate.listenableEvents', t => {
 	const g = requireFromIndex('sources/generate');
 
-	assert.equal(g.listenableEvents, undefined);
+	t.is(g.listenableEvents, undefined);
 
 	const generate = g();
 
-	assert.deepEqual(generate.listenableEvents, ['write', 'finish', 'error']);
+	t.deepEqual(generate.listenableEvents, ['write', 'finish', 'error']);
 });
 
 test.cb('finish event', t => {
@@ -778,11 +777,11 @@ test.cb('override writeFile function using the generate function - encoding opti
 test('generate.use() type', t => {
 	const g = requireFromIndex('sources/generate');
 
-	assert.equal(g.use, undefined);
+	t.is(g.use, undefined);
 
 	const generate = g();
 
-	assert.equal(typeof generate.use, 'function');
+	t.is(typeof generate.use, 'function');
 });
 
 test.cb('generate.use() simple string as content', generateMockingWriteFileMacro, (t, writeFile, generate) => {
