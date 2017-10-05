@@ -2,12 +2,12 @@
 
 ![draft](https://img.shields.io/badge/stability-draft-lightgrey.svg?style=flat-square)
 
-![Branch : release](https://img.shields.io/badge/Branch-release-blue.svg)
-[![version](https://img.shields.io/badge/version-0.3.1-blue.svg)](https://github.com/AlexisTessier/files-generator#readme)
+![Branch : master](https://img.shields.io/badge/Branch-master-blue.svg)
+[![version](https://img.shields.io/badge/version-0.3.2-blue.svg)](https://github.com/AlexisTessier/files-generator#readme)
 [![npm version](https://badge.fury.io/js/files-generator.svg)](https://badge.fury.io/js/files-generator)
 
-[![Build Status](https://travis-ci.org/AlexisTessier/files-generator.svg?branch=release)](https://travis-ci.org/AlexisTessier/files-generator)
-[![Coverage Status](https://coveralls.io/repos/AlexisTessier/files-generator/badge.svg?branch=release&service=github)](https://coveralls.io/github/AlexisTessier/files-generator?branch=release)
+[![Build Status](https://travis-ci.org/AlexisTessier/files-generator.svg?branch=master)](https://travis-ci.org/AlexisTessier/files-generator)
+[![Coverage Status](https://coveralls.io/repos/AlexisTessier/files-generator/badge.svg?branch=master&service=github)](https://coveralls.io/github/AlexisTessier/files-generator?branch=master)
 
 [![Dependency Status](https://david-dm.org/AlexisTessier/files-generator.svg)](https://david-dm.org/AlexisTessier/files-generator)
 [![devDependency Status](https://david-dm.org/AlexisTessier/files-generator/dev-status.svg)](https://david-dm.org/AlexisTessier/files-generator#info=devDependencies)
