@@ -1,6 +1,6 @@
 {
   "name": "files-generator",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "A tool to generate bunch of files, using different kinds of content definition and sources",
   "main": "index.js",
   "directories": {
