@@ -26,7 +26,7 @@ A tool to generate bunch of files, using different kinds of content definition a
 ## Basic usage
 
 ```javascript
-const generate = require('files-generator')
+const generate = require('files-generator')();
 
 generate({
   'path/to/file': 'file-content',

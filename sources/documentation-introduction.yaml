@@ -3,7 +3,7 @@
     npm i files-generator
 - section: Basic usage
 - js: >
-    const generate = require('files-generator')
+    const generate = require('files-generator')();
 
 
     generate({
