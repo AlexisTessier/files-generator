@@ -7,6 +7,8 @@ const sinon = require('sinon');
 
 const dashify = require('dashify');
 
+const msg = require('@alexistessier/msg');
+
 const requireFromIndex = require('../utils/require-from-index'); 
 
 const createTestDirectory = require('../utils/create-test-directory');
@@ -14,6 +16,10 @@ const createTestDirectory = require('../utils/create-test-directory');
 const mockGenerateConfigObjectKeyName = require('../mocks/mock-generate-config-object-key-name');
 const mockFileContent = require('../mocks/mock-file-content');
 const mockWriteFile = require('../mocks/mock-write-file');
+
+function loggable(value) {
+	return typeof value === 'symbol' ? value.toString() : value;
+}
 
 test('type and api', t => {
 	const generateFromIndex = requireFromIndex('index');
@@ -394,6 +400,92 @@ test.cb('override encoding using the generate function after using the instance 
 	});
 });
 
+function encodingNotStringErrorUsingInstanceGeneratorMacro(t, unvalidEncoding){
+	const unvalidEncodingError = t.throws(()=>{
+		const generate = requireFromIndex('sources/generate')({
+			encoding: unvalidEncoding
+		});
+	});
+}
+
+encodingNotStringErrorUsingInstanceGeneratorMacro.title = (providedTitle, unvalidEncoding) => (
+	`${providedTitle} - throw error if encoding using the instance generator is not a string but ${loggable(unvalidEncoding)}`
+);
+
+function encodingNotStringErrorUsingTheGenerateFunctionMacro(t, unvalidEncoding){
+	const generate = requireFromIndex('sources/generate')();
+
+	const filePath = mockGenerateConfigObjectKeyName();
+	const fileContent = mockFileContent();
+
+	const unvalidEncodingError = t.throws(()=>{
+		generate({
+			[filePath]: fileContent
+		}, {
+			encoding: unvalidEncoding,
+			cwd: '/cwd/absolute/override',
+			writeFile: mockWriteFile()
+		});
+	});
+}
+
+encodingNotStringErrorUsingTheGenerateFunctionMacro.title = (providedTitle, unvalidEncoding) => (
+	`${providedTitle} - throw error if encoding using the generate function is not a string but ${loggable(unvalidEncoding)}`
+);
+
+
+function encodingNotStringErrorUsingUseFunctionMacro(t, unvalidEncoding){
+	const generate = requireFromIndex('sources/generate')();
+
+	const writeFile = mockWriteFile();
+	const filePath = mockGenerateConfigObjectKeyName();
+	const fileContent = mockFileContent();
+
+	const unvalidEncodingError = t.throws(()=>{
+		generate({
+			[filePath]: generate.use(fileContent, {
+				encoding: unvalidEncoding,
+				cwd: '/cwd/absolute/override',
+				writeFile: mockWriteFile()
+			})
+		});
+	});
+}
+
+encodingNotStringErrorUsingUseFunctionMacro.title = (providedTitle, unvalidEncoding) => (
+	`${providedTitle} - throw error if encoding using generate.use() is not a string but ${loggable(unvalidEncoding)}`
+);
+
+test(encodingNotStringErrorUsingInstanceGeneratorMacro, false);
+test(encodingNotStringErrorUsingInstanceGeneratorMacro, '');
+test(encodingNotStringErrorUsingInstanceGeneratorMacro, null);
+test(encodingNotStringErrorUsingInstanceGeneratorMacro, Symbol());
+test(encodingNotStringErrorUsingInstanceGeneratorMacro, ()=>{return;});
+test(encodingNotStringErrorUsingInstanceGeneratorMacro, []);
+test(encodingNotStringErrorUsingInstanceGeneratorMacro, ['hjsfd', 'g']);
+test(encodingNotStringErrorUsingInstanceGeneratorMacro, true);
+test(encodingNotStringErrorUsingInstanceGeneratorMacro, {});
+
+test(encodingNotStringErrorUsingTheGenerateFunctionMacro, false);
+test(encodingNotStringErrorUsingTheGenerateFunctionMacro, '');
+test(encodingNotStringErrorUsingTheGenerateFunctionMacro, null);
+test(encodingNotStringErrorUsingTheGenerateFunctionMacro, Symbol());
+test(encodingNotStringErrorUsingTheGenerateFunctionMacro, ()=>{return;});
+test(encodingNotStringErrorUsingTheGenerateFunctionMacro, []);
+test(encodingNotStringErrorUsingTheGenerateFunctionMacro, ['hjsfd', 'g']);
+test(encodingNotStringErrorUsingTheGenerateFunctionMacro, true);
+test(encodingNotStringErrorUsingTheGenerateFunctionMacro, {});
+
+test(encodingNotStringErrorUsingUseFunctionMacro, false);
+test(encodingNotStringErrorUsingUseFunctionMacro, '');
+test(encodingNotStringErrorUsingUseFunctionMacro, null);
+test(encodingNotStringErrorUsingUseFunctionMacro, Symbol());
+test(encodingNotStringErrorUsingUseFunctionMacro, ()=>{return;});
+test(encodingNotStringErrorUsingUseFunctionMacro, []);
+test(encodingNotStringErrorUsingUseFunctionMacro, ['hjsfd', 'g']);
+test(encodingNotStringErrorUsingUseFunctionMacro, true);
+test(encodingNotStringErrorUsingUseFunctionMacro, {});
+
 /*---------------*/
 /*----- cwd -----*/
 /*---------------*/
@@ -771,6 +863,146 @@ test.cb('override writeFile function using the generate function - encoding opti
 	});
 });
 
+/*--------------------*/
+/*----- eventData ----*/
+/*--------------------*/
+
+test.cb('default eventData', testDirectoryMacro, (t, directory) => {
+	const generate = requireFromIndex('sources/generate')();
+
+	t.plan(4);
+
+	const filePath = mockGenerateConfigObjectKeyName({
+		depth: 1,
+		absolute: directory.path
+	});
+	const fileContent = mockFileContent();
+
+	generate({
+		[filePath]: fileContent
+	});
+
+	generate.on('finish', event => {
+		t.pass();
+
+		directory.assertAllFilesExist([...directory.initialFilesList, {
+			path: filePath,
+			content: fileContent
+		}], ()=>{
+			t.is(typeof event, 'object');
+			t.deepEqual(event, {data: undefined});
+			t.pass();
+			t.end();
+		});
+	});
+});
+
+test.cb('override eventData using the instance generator', testDirectoryMacro, (t, directory) => {
+	const data = 'data as string';
+
+	const generate = requireFromIndex('sources/generate')({
+		eventData: data
+	});
+
+	t.plan(4);
+
+	const filePath = mockGenerateConfigObjectKeyName({
+		depth: 1,
+		absolute: directory.path
+	});
+	const fileContent = mockFileContent();
+
+	generate({
+		[filePath]: fileContent
+	});
+
+	generate.on('finish', event=>{
+		t.pass();
+
+		directory.assertAllFilesExist([...directory.initialFilesList, {
+			path: filePath,
+			content: fileContent
+		}], ()=>{
+			t.is(typeof event, 'object');
+			t.deepEqual(event, {data: 'data as string'});
+			t.pass();
+			t.end();
+		});
+	});
+});
+
+test.cb('override eventData using the generate function', testDirectoryMacro, (t, directory) => {
+	const data = {dataKey: 'data value'};
+
+	const generate = requireFromIndex('sources/generate')();
+
+	t.plan(5);
+
+	const filePath = mockGenerateConfigObjectKeyName({
+		depth: 2,
+		absolute: directory.path
+	});
+	const fileContent = mockFileContent();
+
+	generate({
+		[filePath]: fileContent
+	}, {
+		eventData: data
+	});
+
+	generate.on('finish', event=>{
+		t.pass();
+
+		directory.assertAllFilesExist([...directory.initialFilesList, {
+			path: filePath,
+			content: fileContent
+		}], ()=>{
+			t.is(typeof event, 'object');
+			t.is(event.data, data);
+			t.deepEqual(event, {data: {dataKey: 'data value'}});
+			t.pass();
+			t.end();
+		});
+	});
+});
+
+test.cb('override eventData using the generate function after using the instance generator', testDirectoryMacro, (t, directory) => {
+	const data = 42;
+
+	const generate = requireFromIndex('sources/generate')({
+		eventData: {dataKey2: 'data value'}
+	});
+
+	t.plan(5);
+
+	const filePath = mockGenerateConfigObjectKeyName({
+		depth: 1,
+		absolute: directory.path
+	});
+	const fileContent = mockFileContent();
+
+	generate({
+		[filePath]: fileContent
+	}, {
+		eventData: data
+	});
+
+	generate.on('finish', event=>{
+		t.pass();
+
+		directory.assertAllFilesExist([...directory.initialFilesList, {
+			path: filePath,
+			content: fileContent
+		}], ()=>{
+			t.is(typeof event, 'object');
+			t.is(event.data, data);
+			t.deepEqual(event, {data: 42});
+			t.pass();
+			t.end();
+		});
+	});
+});
+
 /*----------------------------*/
 /*------- generate.use -------*/
 /*----------------------------*/
@@ -793,12 +1025,49 @@ test.cb('generate.use() simple string as content', generateMockingWriteFileMacro
 		[filePath]: generate.use(fileContent)
 	});
 
-	generate.on('finish', ()=>{
+	generate.on('finish', event=>{
 		t.true(writeFile.calledOnce);
 		t.true(writeFile.withArgs(filePath, fileContent).calledOnce);
 		writeFileCallExpectOptionsMacro(t, writeFile, 0, {});
+
+		t.deepEqual(event, {data: undefined});
+
 		t.end();
 	});
+});
+
+test('generate.use() simple string as content - trying to override eventData must cause error', generateMockingWriteFileMacro, (t, writeFile, generate) => {
+	const filePath1 = mockGenerateConfigObjectKeyName({ absolute:'/' });
+	const fileContent1 = mockFileContent();
+
+	const tryingToOverrideEventDataFromGenerateUseError = t.throws(() => {
+		generate({
+			[filePath1]: generate.use(fileContent1, {eventData: 'data as string'})
+		});
+	});
+
+	t.is(tryingToOverrideEventDataFromGenerateUseError.message, msg(
+		`You are trying to use generate.use function in order to override`,
+		`the eventData option with the value data as string (string).`,
+		`This will not work. It's not possible.`
+	));
+});
+
+test('generate.use() simple string as content - trying to override eventData even with undefined must cause error', generateMockingWriteFileMacro, (t, writeFile, generate) => {
+	const filePath1 = mockGenerateConfigObjectKeyName({ absolute:'/' });
+	const fileContent1 = mockFileContent();
+
+	const tryingToOverrideEventDataFromGenerateUseError = t.throws(() => {
+		generate({
+			[filePath1]: generate.use(fileContent1, {eventData: undefined})
+		});
+	});
+
+	t.is(tryingToOverrideEventDataFromGenerateUseError.message, msg(
+		`You are trying to use generate.use function in order to override`,
+		`the eventData option with the value undefined (undefined).`,
+		`This will not work. It's not possible.`
+	));
 });
 
 test.cb('generate.use() simple string as content - override encoding', generateMockingWriteFileMacro, (t, writeFile, generate) => {
@@ -814,13 +1083,15 @@ test.cb('generate.use() simple string as content - override encoding', generateM
 		[filePath2]: generate.use(fileContent2, {encoding})
 	});
 
-	generate.on('finish', () => {
+	generate.on('finish', event => {
 		t.is(writeFile.callCount, 2);
 		t.true(writeFile.withArgs(filePath1, fileContent1).calledOnce);
 		writeFileCallExpectOptionsMacro(t, writeFile, 0, {});
 
 		t.true(writeFile.withArgs(filePath2, fileContent2).calledOnce);
 		writeFileCallExpectOptionsMacro(t, writeFile, 1, { encoding });
+
+		t.deepEqual(event, {data: undefined});
 		t.end();
 	});
 });
@@ -835,11 +1106,13 @@ test.cb('generate.use() simple string as content - override cwd', generateMockin
 		[filePath]: generate.use(fileContent, {cwd}),
 	});
 
-	generate.on('finish', () => {
+	generate.on('finish', event => {
 		t.true(writeFile.calledOnce);
 
 		const expectedPath = path.join(cwd, filePath);
 		t.true(writeFile.withArgs(expectedPath, fileContent).calledOnce);
+
+		t.deepEqual(event, {data: undefined});
 
 		t.end();
 	});
@@ -858,11 +1131,14 @@ test.cb('generate.use() simple string as content - override writeFile', generate
 		[filePath2]: generate.use(fileContent2, {writeFile: writeFileBis})
 	});
 
-	generate.on('finish', () => {
+	generate.on('finish', event => {
 		t.true(writeFile.calledOnce);
 		t.true(writeFileBis.calledOnce);
 		t.true(writeFile.withArgs(filePath1, fileContent1).calledOnce);
 		t.true(writeFileBis.withArgs(filePath2, fileContent2).calledOnce);
+
+		t.deepEqual(event, {data: undefined});
+
 		t.end();
 	});
 });
@@ -895,4 +1171,17 @@ test.cb('generate.use() simple string as content - override all the options', ge
 	});
 });
 
-test.todo('generate options');
+test.todo('write event emit');
+test.todo('error event emit');
+
+test.todo('split generate in multiple files');
+
+test.todo('multiple generate call');
+
+test.todo('generate options - rootPath');
+test.todo('generate options - override');
+test.todo('generate options - backupStrategy');
+test.todo('generate options - backupStrategyOptions');
+
+test.todo('handle wrong args types');
+test.todo('remove better-assert');

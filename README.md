@@ -53,6 +53,7 @@ Create a generate function using the defined options
 **Parameters**
 
 -   `options` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)?** An object containing the generate function options. (optional, default `{}`)
+    -   `options.eventData` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** Each time that generate will emit an event, the event handler will receive as first argument an event object with a data key containing this eventData option. (optional, default `undefined`)
     -   `options.writeFile` **[function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)?** The function which will be used to create files and/or directories. (optional, default `defaultWriteFile`)
     -   `options.encoding` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** The encoding to use when writing files. (optional, default `'utf-8'`)
     -   `options.cwd` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** The cwd used if you try to generate some relative paths. Must be an absolute path. (optional, default `process.cwd()`)
@@ -65,6 +66,7 @@ Generate files from different kinds of inputs
 
 -   `generateConfig` **GenerateConfig** The generate config contains all the file paths to generate.
 -   `options` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** This options object can be used to overide some options defined in the generateGenerate function. (optional, default `{}`)
+    -   `options.eventData`   (optional, default `_eventData`)
     -   `options.writeFile`   (optional, default `_writeFile`)
     -   `options.encoding`   (optional, default `_encoding`)
     -   `options.cwd`   (optional, default `_cwd`)

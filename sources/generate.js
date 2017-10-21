@@ -6,6 +6,8 @@ const path = require('path');
 const assert = require('better-assert');
 const mkdirp = require('mkdirp');
 
+const msg = require('@alexistessier/msg');
+
 /*----------------*/
 /*----------------*/
 /*----------------*/
@@ -30,7 +32,9 @@ function defaultWriteFile(filePath, content, options, writeFileCallback) {
 	mkdirp(path.dirname(filePath), err => {
 		if (err) {return writeFileCallback(err);}
 
-		fs.writeFile(filePath, content, options, writeFileCallback);
+		fs.writeFile(filePath, content, options, err => {
+			writeFileCallback(err);
+		});
 	});
 }
 
@@ -64,6 +68,13 @@ function relativeCwdError(cwd) {
 	return new Error(`You must provide an absolute cwd path. "${cwd}" is a relative one.`);
 }
 
+/**
+ * @private
+ */
+function isNotEmpty(string) {
+	return string.trim().length > 0;
+}
+
 /*----------------*/
 /*----------------*/
 /*----------------*/
@@ -73,19 +84,24 @@ function relativeCwdError(cwd) {
  *
  * @param {object} [options=] - An object containing the generate function options.
  * @param {function} [options.writeFile=] - The function which will be used to create files and/or directories.
+ * @param {string} [options.eventData=undefined] - Each time that generate will emit an event, the event handler will receive as first argument an event object with a data key containing this eventData option.
  * @param {string} [options.encoding='utf-8'] - The encoding to use when writing files.
+ * @param {string} [options.cwd=process.cwd()] - The cwd used if you try to generate some relative paths. Must be an absolute path.
  * @param {string} [options.cwd=process.cwd()] - The cwd used if you try to generate some relative paths. Must be an absolute path.
  */
 function generateGenerate({
+	eventData,
 	writeFile = defaultWriteFile,
 	encoding = defaultEncoding,
 	cwd = process.cwd()
 } = {}) {
+	assert(typeof encoding === 'string' && isNotEmpty(encoding));
+
 	if(!path.isAbsolute(cwd)){
 		throw relativeCwdError(cwd);
 	}
 
-	const _writeFile = writeFile, _encoding = encoding, _cwd = cwd;
+	const _writeFile = writeFile, _encoding = encoding, _cwd = cwd, _eventData = eventData;
 
 	let listeners = [];
 
@@ -108,6 +124,18 @@ function generateGenerate({
 	}
 
 	function use(content, options = {}) {
+		if ('eventData' in options) {
+			throw new Error(msg(
+				`You are trying to use generate.use function in order to override the eventData option with the`,
+				`value ${options.eventData} (${typeof options.eventData}).`,
+				`This will not work. It's not possible.`
+			));
+		}
+
+		if (options.encoding !== undefined) {
+			assert(typeof options.encoding === 'string' && isNotEmpty(options.encoding));
+		}
+
 		if(options.cwd && !path.isAbsolute(options.cwd)){
 			throw relativeCwdError(options.cwd);
 		}
@@ -122,19 +150,26 @@ function generateGenerate({
 	 * @param {object} options - This options object can be used to overide some options defined in the generateGenerate function.
 	 */
 	function generate(generateConfig, {
+		eventData = _eventData,
 		writeFile = _writeFile,
 		encoding = _encoding,
 		cwd = _cwd
 	} = {}){
 		assert(typeof generateConfig === 'object' || !generateConfig);
 
+		assert(typeof encoding === 'string' && isNotEmpty(encoding));
+
 		if(!path.isAbsolute(cwd)){
 			throw relativeCwdError(cwd);
 		}
 
+		const eventObject = {
+			data: eventData
+		};
+
 		process.nextTick(()=>{
 			if (!generateConfig) {
-				return emit('finish');
+				return emit('finish', eventObject);
 			}
 
 			Promise.all(Object.keys(generateConfig).map(filePath => ({
@@ -167,9 +202,9 @@ function generateGenerate({
 					writeFile(relativeToAbsolute(cwd, file.path), fileContent, filePathOptions, writeFilehandler);
 				}
 			}))).then(() => {
-				emit('finish');
-			}).catch(err => {
-				emit('error', err);
+				emit('finish', eventObject);
+			}).catch(error => {
+				emit('error', Object.assign({}, eventObject, {error}));
 			});
 		});
 	}

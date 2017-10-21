@@ -5,6 +5,7 @@ const generate = require('generate')();
 generate({
 	"simple/file.txt": "simple content", //DONE
 	"simple/file/options.txt": generate.use("simple content", {encoding:'utf-8'}), //DONE
+		// eventData, DONE
 		// writeFile, DONE
 		// encoding, DONE
 		// cwd: process.cwd(), DONE
@@ -16,6 +17,7 @@ generate({
 
 	"simple/file/using/util.txt": generate.content("simple content"),
 	"simple/file/using/util/options.txt": generate.content("simple content", {encoding:'utf-8'}),
+		// eventData
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -26,6 +28,7 @@ generate({
 
 	"simple/file/using/copy/util.txt": generate.content.copy("file/to/copy.txt"),
 	"simple/file/using/copy/util/options.txt": generate.content.copy("file/to/copy.txt", {encoding:'utf-8'}),
+		// eventData
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -36,6 +39,7 @@ generate({
 	
 	"simple/file/using/from/util.txt": generate.content.from("other/generated/file/path.txt"),
 	"simple/file/using/from/util/options.txt": generate.content.from("other/generated/file/path.txt", {encoding:'utf-8'}),
+		// eventData
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -46,6 +50,7 @@ generate({
 
 	"file/from/buffer.txt": Buffer.from('buffer content'),
 	"file/from/buffer/options.txt": generate.use(Buffer.from('buffer content'), {encoding:'utf-8'}),
+		// eventData
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -56,6 +61,7 @@ generate({
 
 	"file/from/buffer/using/util.txt": generate.buffer('buffer content'),
 	"file/from/buffer/using/util/options.txt": generate.buffer('buffer content', {encoding:'utf-8'}),
+		// eventData
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -66,6 +72,7 @@ generate({
 
 	"file/from/buffer/using/copy/util.txt": generate.buffer.copy("file/to/copy.txt"),
 	"file/from/buffer/using/copy/util/options.txt": generate.buffer.copy("file/to/copy.txt", {encoding:'utf-8'}),
+		// eventData
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -76,6 +83,7 @@ generate({
 	
 	"file/from/buffer/using/from/util.txt": generate.buffer.from("other/generated/file/path.txt"),
 	"file/from/buffer/using/from/util/options.txt": generate.buffer.from("other/generated/file/path.txt", {encoding:'utf-8'}),
+		// eventData
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -86,6 +94,7 @@ generate({
 
 	"file/from/stream.txt": intoStream('stream content'),
 	"file/from/stream/options.txt": generate.use(intoStream('stream content'), {encoding:'utf-8'}),
+		// eventData
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -96,6 +105,7 @@ generate({
 
 	"file/from/stream/using/util.txt": generate.stream("file-content using stream"),
 	"file/from/stream/using/util/options.txt": generate.stream("file-content using stream", {encoding:'utf-8'}),
+		// eventData,
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -106,6 +116,7 @@ generate({
 
 	"file/from/stream/using/copy/util.txt": generate.stream.copy("file/to/copy.txt"),
 	"file/from/stream/using/copy/util/options.txt": generate.stream.copy("file/to/copy.txt", {encoding:'utf-8'}),
+		// eventData,
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -116,6 +127,7 @@ generate({
 	
 	"file/from/stream/using/from/util.txt": generate.stream.from("other/generated/file/path.txt"),
 	"file/from/stream/using/from/util/options.txt": generate.stream.from("other/generated/file/path.txt", {encoding:'utf-8'}),
+		// eventData,
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -128,6 +140,7 @@ generate({
 	"generate/step/file.txt": generate.stream.from("generate-step"),
 	"generate-step-options": generate.step(generate.stream.copy('file.txt'), {encoding: 'utf-8'}),
 	"generate/step/file/options.txt": generate.stream.from("generate-step"),
+		// eventData,
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -141,6 +154,7 @@ generate({
 	)=>{
 
 	}),
+		// eventData,
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -153,6 +167,7 @@ generate({
 	"empty/directory": {},
 	"empty/directory/using/util": generate.directory(),
 	"empty/directory/using/util/options": generate.directory(null, {encoding: 'utf-8'}),
+		// eventData,
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -172,6 +187,7 @@ generate({
 		'subdirectory': generate.directory(),
 		'subfilename.txt': 'file content'
 	}, {encoding: 'utf-8'}),
+		// eventData,
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -182,6 +198,7 @@ generate({
 
 	"directory/to/copy": generate.directory.copy("path/to/copy"),
 	"directory/to/copy/options": generate.directory.copy("path/to/copy", {encoding:'iso'}),
+		// eventData,
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -192,6 +209,7 @@ generate({
 
 	"path/from/copy.txt": generate.copy("path/to/copy.txt"),
 	"path/from/copy/options.txt": generate.copy("path/to/copy.txt", {encoding:'iso'}),
+		// eventData,
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -202,6 +220,7 @@ generate({
 
 	"path/from/copy/directory": generate.copy("path/to/copy"),
 	"path/from/copy/directory/options.txt": generate.copy("path/to/copy", {encoding:'iso'}),
+		// eventData,
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -216,6 +235,7 @@ generate({
 	"from/mutiple/files/options.js": generate.glob('**/*.js', {encoding:'iso'}, (files, cb) => {
 
 	}),
+		// eventData,
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -231,6 +251,7 @@ generate({
 	"from/pattern/options/{{name}}.js": generate.pattern({
 		name: 'filename'
 	}, 'file content', {encoding:'iso'}),
+		// eventData,
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -257,6 +278,7 @@ generate({
 			}, 'file content'))
 		})
 	}),
+		// eventData,
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),
@@ -272,6 +294,7 @@ generate({
 				hash: hash('title'),
 				ext: '.txt'
 			}, 'file content', {encoding:'iso'}))
+			// eventData,
 			// writeFile,
 			// encoding,
 			// cwd: process.cwd(),
@@ -288,6 +311,7 @@ generate({
 				hash: hash('title'),
 				ext: '.txt'
 			}, 'file content', {encoding:'iso'}))
+			// eventData,
 			// writeFile,
 			// encoding,
 			// cwd: process.cwd(),
@@ -297,6 +321,7 @@ generate({
 			// backupStrategyOptions: {}
 		})
 	}),
+		// eventData,
 		// writeFile,
 		// encoding,
 		// cwd: process.cwd(),

@@ -111,6 +111,7 @@
     ]
   },
   "dependencies": {
+    "@alexistessier/msg": "1.0.2",
     "better-assert": "1.0.2",
     "is-directory": "0.3.1",
     "is-stream": "1.1.0",
