@@ -6,6 +6,13 @@ const sinon = require('sinon');
 
 const requireFromIndex = require('../../utils/require-from-index');
 
+const testDirectoryMacro = require('./test-directory.macro');
+
+const mockGenerateConfigObjectKeyName = require('../../mocks/mock-generate-config-object-key-name');
+const mockFileContent = require('../../mocks/mock-file-content');
+
+/*------------------------*/
+
 test('generate.on is a function', t => {
 	const g = requireFromIndex('sources/generate');
 
@@ -119,5 +126,145 @@ test.cb('generate.off()', t => {
 		t.true(pass5.notCalled);
 
 		t.end();
+	});
+});
+
+/*--------------------*/
+/*----- eventData ----*/
+/*--------------------*/
+
+test.cb('default eventData', testDirectoryMacro, (t, directory) => {
+	const generate = requireFromIndex('sources/generate')();
+
+	t.plan(4);
+
+	const filePath = mockGenerateConfigObjectKeyName({
+		depth: 1,
+		absolute: directory.path
+	});
+	const fileContent = mockFileContent();
+
+	generate({
+		[filePath]: fileContent
+	});
+
+	generate.on('finish', event => {
+		t.pass();
+
+		directory.assertAllFilesExist([...directory.initialFilesList, {
+			path: filePath,
+			content: fileContent
+		}], ()=>{
+			t.is(typeof event, 'object');
+			t.deepEqual(event, {data: undefined});
+			t.pass();
+			t.end();
+		});
+	});
+});
+
+test.cb('override eventData using the instance generator', testDirectoryMacro, (t, directory) => {
+	const data = 'data as string';
+
+	const generate = requireFromIndex('sources/generate')({
+		eventData: data
+	});
+
+	t.plan(4);
+
+	const filePath = mockGenerateConfigObjectKeyName({
+		depth: 1,
+		absolute: directory.path
+	});
+	const fileContent = mockFileContent();
+
+	generate({
+		[filePath]: fileContent
+	});
+
+	generate.on('finish', event=>{
+		t.pass();
+
+		directory.assertAllFilesExist([...directory.initialFilesList, {
+			path: filePath,
+			content: fileContent
+		}], ()=>{
+			t.is(typeof event, 'object');
+			t.deepEqual(event, {data: 'data as string'});
+			t.pass();
+			t.end();
+		});
+	});
+});
+
+test.cb('override eventData using the generate function', testDirectoryMacro, (t, directory) => {
+	const data = {dataKey: 'data value'};
+
+	const generate = requireFromIndex('sources/generate')();
+
+	t.plan(5);
+
+	const filePath = mockGenerateConfigObjectKeyName({
+		depth: 2,
+		absolute: directory.path
+	});
+	const fileContent = mockFileContent();
+
+	generate({
+		[filePath]: fileContent
+	}, {
+		eventData: data
+	});
+
+	generate.on('finish', event=>{
+		t.pass();
+
+		directory.assertAllFilesExist([...directory.initialFilesList, {
+			path: filePath,
+			content: fileContent
+		}], ()=>{
+			t.is(typeof event, 'object');
+			t.is(event.data, data);
+			t.deepEqual(event, {data: {dataKey: 'data value'}});
+			t.pass();
+			t.end();
+		});
+	});
+});
+
+test.cb('override eventData using the generate function after using the instance generator', testDirectoryMacro, (t, directory) => {
+	const data = 42;
+
+	const generate = requireFromIndex('sources/generate')({
+		eventData: {dataKey2: 'data value'}
+	});
+
+	t.plan(5);
+
+	const filePath = mockGenerateConfigObjectKeyName({
+		depth: 1,
+		absolute: directory.path
+	});
+	const fileContent = mockFileContent();
+
+	generate({
+		[filePath]: fileContent
+	}, {
+		eventData: data
+	});
+
+	generate.on('finish', event=>{
+		t.pass();
+
+		directory.assertAllFilesExist([...directory.initialFilesList, {
+			path: filePath,
+			content: fileContent
+		}], ()=>{
+			t.is(typeof event, 'object');
+			t.is(event.data, data);
+			t.deepEqual(event, {data: 42});
+			t.pass();
+			t.end();
+		});
 	});
 });

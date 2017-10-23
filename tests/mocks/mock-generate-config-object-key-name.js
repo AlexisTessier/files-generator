@@ -16,7 +16,7 @@ function mockGenerateConfigObjectKeyName({
 	if (depth % 2 === 0) {
 		return `${absoluteMark}mock-folder-name-${fileNameCount}/mock-file-name-${fileNameCount}${ext}`;
 	}
-	
+
 	return `${absoluteMark}mock-file-name-${fileNameCount}${ext}`;
 }
 

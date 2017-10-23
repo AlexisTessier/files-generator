@@ -21,7 +21,7 @@ module.exports = function createTestDirectory({
 	assert(!template || (typeof template === 'string' && template.length >= 2));
 
 	temp.mkdir(title, (err, absolutePath)=>{
-		if (err) {throw err;return;}
+		if (err) {throw err;}
 
 		function createTestDirectoryCallbackRun() {
 			const directory = {
@@ -76,7 +76,7 @@ module.exports = function createTestDirectory({
 			const templatePath = path.join(__dirname, `test-directory-templates/${template}`);
 
 			copy(templatePath, absolutePath, err => {
-				if (err) {throw err;return;}
+				if (err) {throw err;}
 
 				createTestDirectoryCallbackRun();
 			});

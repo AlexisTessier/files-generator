@@ -33,7 +33,34 @@ test('type and api', t => {
 	t.is(typeof generate, 'function');
 });
 
+test('generate.use() type', t => {
+	const g = requireFromIndex('sources/generate');
+
+	t.is(g.use, undefined);
+
+	const generate = g();
+
+	t.is(typeof generate.use, 'function');
+});
+
 /*---------------------------*/
 
 test('Basic usage', featureHasTestFileMacro, 'basic-usage');
 test('Event subscription', featureHasTestFileMacro, 'event-subscription');
+test('Options and options overrides usage', featureHasTestFileMacro, 'options-usage');
+test('Errors handling', featureHasTestFileMacro, 'errors-handling');
+
+test.todo('write event emit');
+test.todo('error event emit');
+
+test.todo('split generate in multiple files');
+
+test.todo('multiple generate call');
+
+test.todo('generate options - rootPath');
+test.todo('generate options - override');
+test.todo('generate options - backupStrategy');
+test.todo('generate options - backupStrategyOptions');
+
+test.todo('handle wrong args types');
+test.todo('remove better-assert');

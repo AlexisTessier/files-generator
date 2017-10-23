@@ -33,7 +33,6 @@ module.exports = function assertAllFilesExist(expectedFiles, assertAllFilesExist
 
 	expectedFiles.forEach(expectedFile => {
 		assert(typeof expectedFile === 'object');
-		
 		assert(typeof expectedFile.path === 'string');
 		assert(path.isAbsolute(expectedFile.path));
 
