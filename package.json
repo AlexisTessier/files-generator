@@ -67,8 +67,8 @@
   "licenseDate": "2017-present",
   "devDependencies": {
     "@alexistessier/es-lint-config": "1.7.0",
-    "@alexistessier/node-module-starterkit-release-dep": "1.7.3",
-    "ava": "0.22.0",
+    "@alexistessier/node-module-starterkit-release-dep": "1.7.4",
+    "ava": "0.23.0",
     "capitalize": "1.0.0",
     "concurrently": "3.5.0",
     "coveralls": "3.0.0",

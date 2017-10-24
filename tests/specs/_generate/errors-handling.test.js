@@ -187,3 +187,6 @@ test('generate.use() simple string as content - trying to override eventData eve
 		`This will not work. It's not possible.`
 	));
 });
+
+test.todo('handle wrong args types');
+test.todo('remove better-assert');

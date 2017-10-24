@@ -579,3 +579,8 @@ test.cb('generate.use() simple string as content - override all the options', ge
 		t.end();
 	});
 });
+
+test.todo('generate options - rootPath');
+test.todo('generate options - override');
+test.todo('generate options - backupStrategy');
+test.todo('generate options - backupStrategyOptions');

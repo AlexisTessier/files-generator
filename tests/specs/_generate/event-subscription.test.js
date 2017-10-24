@@ -43,6 +43,8 @@ test('generate.listenableEvents', t => {
 	t.deepEqual(generate.listenableEvents, ['write', 'finish', 'error']);
 });
 
+/*------------------------*/
+
 test.cb('finish event', t => {
 	const generate = requireFromIndex('sources/generate')();
 
@@ -87,6 +89,24 @@ test.cb('finish event off', t => {
 		t.end();
 	});
 });
+
+/*-----------------------*/
+
+test.todo('write event');
+
+test.todo('write event on');
+
+test.todo('write event off');
+
+/*-----------------------*/
+
+test.todo('error event');
+
+test.todo('error event on');
+
+test.todo('error event off');
+
+/*-----------------------*/
 
 test.cb('generate.off()', t => {
 	const generate = requireFromIndex('sources/generate')();
@@ -268,3 +288,7 @@ test.cb('override eventData using the generate function after using the instance
 		});
 	});
 });
+
+test.todo('event data with write events')
+
+test.todo('event data with error events')

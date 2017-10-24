@@ -115,3 +115,5 @@ test.cb('generate.use() simple string as content', generateMockingWriteFileMacro
 		t.end();
 	});
 });
+
+test.todo('other content type - see roadmap draft');

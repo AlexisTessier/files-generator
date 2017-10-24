@@ -45,22 +45,8 @@ test('generate.use() type', t => {
 
 /*---------------------------*/
 
-test('Basic usage', featureHasTestFileMacro, 'basic-usage');
 test('Event subscription', featureHasTestFileMacro, 'event-subscription');
+test('Basic usage', featureHasTestFileMacro, 'basic-usage');
 test('Options and options overrides usage', featureHasTestFileMacro, 'options-usage');
+test('Multiple generate calls', featureHasTestFileMacro, 'multiple-generate-calls');
 test('Errors handling', featureHasTestFileMacro, 'errors-handling');
-
-test.todo('write event emit');
-test.todo('error event emit');
-
-test.todo('split generate in multiple files');
-
-test.todo('multiple generate call');
-
-test.todo('generate options - rootPath');
-test.todo('generate options - override');
-test.todo('generate options - backupStrategy');
-test.todo('generate options - backupStrategyOptions');
-
-test.todo('handle wrong args types');
-test.todo('remove better-assert');
