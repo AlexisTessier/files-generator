@@ -2,6 +2,7 @@
 
 const test = require('ava');
 
+const path = require('path');
 const sinon = require('sinon');
 
 const requireFromIndex = require('../../utils/require-from-index');
@@ -90,11 +91,53 @@ test.cb('finish event off', t => {
 	});
 });
 
+test.cb('finish event off with multiple handler', t => {
+	const generate = requireFromIndex('sources/generate')();
+
+	generate();
+
+	const pass = sinon.spy();
+	const pass2 = sinon.spy();
+
+	generate.on('finish', pass2);
+	generate.on('finish', pass);
+	generate.off('finish', pass);
+
+	generate.on('finish', ()=>{
+		t.true(pass.notCalled);
+		t.true(pass2.calledOnce);
+		t.pass();
+		t.end();
+	});
+});
+
 /*-----------------------*/
 
-test.todo('write event');
+test.cb('write event', testDirectoryMacro, (t, directory) => {
+	const generate = requireFromIndex('sources/generate')();
 
-test.todo('write event on');
+	t.plan(3);
+
+	const filePathOne = path.join(directory.path, 'john-connor.txt');
+	const filePathTwo = path.join(directory.path, 'sarah-connor.txt');
+	const filePathThree = path.join(directory.path, 'T-800.txt');
+
+	generate({
+		[filePathOne]: 'Son of Sarah Connor and saviour of the humanity.',
+		[filePathTwo]: 'Mother of John Connor',
+		[filePathThree]: 'Governator of California'
+	});
+
+	generate.on('write', ()=>{
+		t.pass();
+	});
+
+	generate.on('finish', ()=>{
+		t.end();
+	})
+});
+
+test.todo('write event emmited after file was created');
 
 test.todo('write event off');
 
@@ -288,6 +331,8 @@ test.cb('override eventData using the generate function after using the instance
 		});
 	});
 });
+
+
 
 test.todo('event data with write events')
 

@@ -179,6 +179,7 @@ function generateGenerate({
 
 				const fileContent = file.content;
 				function writeFilehandler(err){
+					emit('write');
 					err ? reject(err) : resolve();
 				}
 

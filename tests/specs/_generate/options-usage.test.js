@@ -551,6 +551,23 @@ test.cb('override writeFile function using the generate function - encoding opti
 	});
 });
 
+/*--------------------*/
+/*----- rootPath -----*/
+/*--------------------*/
+
+test.todo('override rootPath option using the instance generator');
+test.todo('override rootPath option using the generate function');
+test.todo('override rootPath option using the generate function after using the instance generator');
+test.todo('generate.use() simple string as content - rootPath option');
+
+
+test.todo('generate options - override');
+test.todo('generate options - backupStrategy');
+test.todo('generate options - backupStrategyOptions');
+
+/*-------------------*/
+/*-------------------*/
+/*-------------------*/
 
 test.cb('generate.use() simple string as content - override all the options', generateMockingWriteFileMacro, (t, writeFile, generate) => {
 	const encoding = 'latin1';
@@ -579,8 +596,3 @@ test.cb('generate.use() simple string as content - override all the options', ge
 		t.end();
 	});
 });
-
-test.todo('generate options - rootPath');
-test.todo('generate options - override');
-test.todo('generate options - backupStrategy');
-test.todo('generate options - backupStrategyOptions');
