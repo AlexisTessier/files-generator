@@ -69,7 +69,7 @@ class UseObject {
 
 /**
  * @private
- * 
+ *
  * @param {string} cwd The current working directory path to use in order to deduce the absolute path.
  * @param {string} relative The relative path to transform in a absolute one.
  *
@@ -181,7 +181,7 @@ function generateGenerate({
 
 	/**
 	 * @description - Generate files from different kinds of inputs
-	 * 
+	 *
 	 * @param {GenerateConfig} generateConfig - The generate config contains all the file paths to generate.
 	 * @param {object} options - This options object can be used to overide some options defined in the generateGenerate function.
 	 *
