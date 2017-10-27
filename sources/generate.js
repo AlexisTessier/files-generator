@@ -1,5 +1,7 @@
 'use strict';
 
+const nativeAssert = require('assert');
+
 const fs = require('fs');
 const path = require('path');
 
@@ -18,6 +20,11 @@ const msg = require('@alexistessier/msg');
 const listenableEvents = [
 	'write', 'finish', 'error'
 ];
+
+const quotedEvents = listenableEvents.map(e => `"${e}"`);
+const loggableEvents = [quotedEvents.slice(0, -1).join(', '), quotedEvents.pop()].join(' or ');
+const notListenableEventErrorMessage = `The event parameter must be one of the following string: ${loggableEvents}.`;
+const unvalidListenerErrorMessage = `The event listener parameter must be a function.`;
 
 /**
  * @private
@@ -133,10 +140,16 @@ function generateGenerate({
 	}
 
 	function on(event, listener) {
+		nativeAssert(listenableEvents.includes(event), notListenableEventErrorMessage);
+		nativeAssert(typeof listener === 'function', unvalidListenerErrorMessage);
+
 		listeners.push({event, listener});
 	}
 
 	function off(eventToUnbind, listenerToUnbind) {
+		nativeAssert(listenableEvents.includes(eventToUnbind), notListenableEventErrorMessage);
+		nativeAssert(typeof listenerToUnbind === 'function', unvalidListenerErrorMessage);
+
 		listeners = listeners.filter(({event, listener}) => {
 			if (event === eventToUnbind) {
 				return !(listener === listenerToUnbind);

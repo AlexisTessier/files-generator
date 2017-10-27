@@ -461,5 +461,160 @@ test.todo('override eventData using the instance generator with error event');
 test.todo('override eventData using the generate function with error event');
 test.todo('override eventData using the generate function after using the instance generator with error event');
 
-test.todo('generate on with wrong arguments');
-test.todo('generate off with wrong arguments');
+/*----------------*/
+
+function generateOnWithWrongArgumentsMacro(t, errorMessage, ...wrongArgs) {
+	const generate = requireFromIndex('sources/generate')();
+
+	const onWrongArgsError = t.throws(() => {
+		generate.on(...wrongArgs);
+	});
+
+	t.is(onWrongArgsError.message, errorMessage);
+}
+
+generateOnWithWrongArgumentsMacro.title = providedTitle => (
+	`generate on with wrong arguments - ${providedTitle}`
+)
+
+const wrongEventParameterErrorMessage =
+	'The event parameter must be one of the following string: "write", "finish" or "error".';
+
+const wrongListenerParameterErrorMessage =
+	'The event listener parameter must be a function.';
+
+test('without parameters', generateOnWithWrongArgumentsMacro, wrongEventParameterErrorMessage);
+test('with function', generateOnWithWrongArgumentsMacro, wrongEventParameterErrorMessage, function test() {return;});
+test('with number', generateOnWithWrongArgumentsMacro, wrongEventParameterErrorMessage, 42);
+test('with symbol', generateOnWithWrongArgumentsMacro, wrongEventParameterErrorMessage, Symbol());
+test('with object', generateOnWithWrongArgumentsMacro, wrongEventParameterErrorMessage, {});
+test('with array', generateOnWithWrongArgumentsMacro, wrongEventParameterErrorMessage, [87, false]);
+test('with empty array', generateOnWithWrongArgumentsMacro, wrongEventParameterErrorMessage, []);
+test('with true', generateOnWithWrongArgumentsMacro, wrongEventParameterErrorMessage, true);
+test('with false', generateOnWithWrongArgumentsMacro, wrongEventParameterErrorMessage, false);
+test('with null', generateOnWithWrongArgumentsMacro, wrongEventParameterErrorMessage, null);
+test('with undefined', generateOnWithWrongArgumentsMacro, wrongEventParameterErrorMessage, undefined);
+test('with wrong string', generateOnWithWrongArgumentsMacro, wrongEventParameterErrorMessage, 'wite');
+test('with wrong string 2', generateOnWithWrongArgumentsMacro, wrongEventParameterErrorMessage, 'finih');
+test('with wrong string 3', generateOnWithWrongArgumentsMacro, wrongEventParameterErrorMessage, 'err');
+test('with empty string', generateOnWithWrongArgumentsMacro, wrongEventParameterErrorMessage, '  	');
+
+test('without parameters', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write');
+test('with number', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', 42);
+test('with symbol', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', Symbol());
+test('with object', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', {});
+test('with array', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', [87, false]);
+test('with empty array', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', []);
+test('with true', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', true);
+test('with false', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', false);
+test('with null', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', null);
+test('with undefined', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', undefined);
+test('with wrong string', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', 'write');
+test('with wrong string 2', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', 'finish');
+test('with wrong string 3', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', 'error');
+test('with empty string', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', '  	');
+
+test('without parameters', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish');
+test('with number', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', 42);
+test('with symbol', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', Symbol());
+test('with object', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', {});
+test('with array', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', [87, false]);
+test('with empty array', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', []);
+test('with true', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', true);
+test('with false', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', false);
+test('with null', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', null);
+test('with undefined', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', undefined);
+test('with wrong string', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', 'write');
+test('with wrong string 2', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', 'finish');
+test('with wrong string 3', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', 'error');
+test('with empty string', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', '  	');
+
+test('without parameters', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error');
+test('with number', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', 42);
+test('with symbol', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', Symbol());
+test('with object', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', {});
+test('with array', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', [87, false]);
+test('with empty array', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', []);
+test('with true', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', true);
+test('with false', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', false);
+test('with null', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', null);
+test('with undefined', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', undefined);
+test('with wrong string', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', 'write');
+test('with wrong string 2', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', 'finish');
+test('with wrong string 3', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', 'error');
+test('with empty string', generateOnWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', '  	');
+
+function generateOffWithWrongArgumentsMacro(t, errorMessage, ...wrongArgs) {
+	const generate = requireFromIndex('sources/generate')();
+
+	const offWrongArgsError = t.throws(() => {
+		generate.off(...wrongArgs);
+	});
+
+	t.is(offWrongArgsError.message, errorMessage);
+}
+
+generateOffWithWrongArgumentsMacro.title = providedTitle => (
+	`generate off with wrong arguments - ${providedTitle}`
+)
+
+test('without parameters', generateOffWithWrongArgumentsMacro, wrongEventParameterErrorMessage);
+test('with function', generateOffWithWrongArgumentsMacro, wrongEventParameterErrorMessage, function test() {return;});
+test('with number', generateOffWithWrongArgumentsMacro, wrongEventParameterErrorMessage, 42);
+test('with symbol', generateOffWithWrongArgumentsMacro, wrongEventParameterErrorMessage, Symbol());
+test('with object', generateOffWithWrongArgumentsMacro, wrongEventParameterErrorMessage, {});
+test('with array', generateOffWithWrongArgumentsMacro, wrongEventParameterErrorMessage, [87, false]);
+test('with empty array', generateOffWithWrongArgumentsMacro, wrongEventParameterErrorMessage, []);
+test('with true', generateOffWithWrongArgumentsMacro, wrongEventParameterErrorMessage, true);
+test('with false', generateOffWithWrongArgumentsMacro, wrongEventParameterErrorMessage, false);
+test('with null', generateOffWithWrongArgumentsMacro, wrongEventParameterErrorMessage, null);
+test('with undefined', generateOffWithWrongArgumentsMacro, wrongEventParameterErrorMessage, undefined);
+test('with wrong string', generateOffWithWrongArgumentsMacro, wrongEventParameterErrorMessage, 'wite');
+test('with wrong string 2', generateOffWithWrongArgumentsMacro, wrongEventParameterErrorMessage, 'finih');
+test('with wrong string 3', generateOffWithWrongArgumentsMacro, wrongEventParameterErrorMessage, 'err');
+test('with empty string', generateOffWithWrongArgumentsMacro, wrongEventParameterErrorMessage, '  	');
+
+test('without parameters', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write');
+test('with number', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', 42);
+test('with symbol', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', Symbol());
+test('with object', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', {});
+test('with array', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', [87, false]);
+test('with empty array', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', []);
+test('with true', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', true);
+test('with false', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', false);
+test('with null', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', null);
+test('with undefined', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', undefined);
+test('with wrong string', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', 'write');
+test('with wrong string 2', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', 'finish');
+test('with wrong string 3', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', 'error');
+test('with empty string', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'write', '  	');
+
+test('without parameters', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish');
+test('with number', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', 42);
+test('with symbol', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', Symbol());
+test('with object', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', {});
+test('with array', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', [87, false]);
+test('with empty array', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', []);
+test('with true', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', true);
+test('with false', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', false);
+test('with null', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', null);
+test('with undefined', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', undefined);
+test('with wrong string', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', 'write');
+test('with wrong string 2', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', 'finish');
+test('with wrong string 3', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', 'error');
+test('with empty string', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'finish', '  	');
+
+test('without parameters', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error');
+test('with number', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', 42);
+test('with symbol', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', Symbol());
+test('with object', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', {});
+test('with array', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', [87, false]);
+test('with empty array', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', []);
+test('with true', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', true);
+test('with false', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', false);
+test('with null', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', null);
+test('with undefined', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', undefined);
+test('with wrong string', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', 'write');
+test('with wrong string 2', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', 'finish');
+test('with wrong string 3', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', 'error');
+test('with empty string', generateOffWithWrongArgumentsMacro, wrongListenerParameterErrorMessage, 'error', '  	');

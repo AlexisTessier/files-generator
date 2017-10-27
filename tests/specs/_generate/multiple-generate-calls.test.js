@@ -8,4 +8,4 @@ const requireFromIndex = require('../../utils/require-from-index');
 
 /*------------------------*/
 
-test.todo('multiple genrate calls');
+test.todo('multiple generate calls');
