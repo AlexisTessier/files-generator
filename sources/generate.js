@@ -21,6 +21,14 @@ const listenableEvents = [
 
 /**
  * @private
+ *
+ * @param {string} filePath The path where the file will be written.
+ * @param {string} content The content of the written file.
+ * @param {object} options An options object.
+ * @param {string} options.encoding The encoding to use when writing the file.
+ * @param {function} writeFileCallback The callback to call when the file is written. Must handle an eventual error as first parameter.
+ *
+ * @return {undefined}
  */
 function defaultWriteFile(filePath, content, options, writeFileCallback) {
 	assert(typeof filePath === 'string' && path.isAbsolute(filePath));
@@ -54,6 +62,11 @@ class UseObject {
 
 /**
  * @private
+ * 
+ * @param {string} cwd The current working directory path to use in order to deduce the absolute path.
+ * @param {string} relative The relative path to transform in a absolute one.
+ *
+ * @return {string} The absolute version of the relative path.
  */
 function relativeToAbsolute(cwd, relative) {
 	assert(path.isAbsolute(cwd));
@@ -63,6 +76,10 @@ function relativeToAbsolute(cwd, relative) {
 
 /**
  * @private
+ *
+ * @param {string} cwd A current working directory path which is relative.
+ *
+ * @return {Error} An Error instance with the appropriate error message.
  */
 function relativeCwdError(cwd) {
 	return new Error(`You must provide an absolute cwd path. "${cwd}" is a relative one.`);
@@ -70,6 +87,10 @@ function relativeCwdError(cwd) {
 
 /**
  * @private
+ *
+ * @param {string} string The string to check for unemptyness.
+ *
+ * @return {boolean} false if the trimed string is empty, true otherwise.
  */
 function isNotEmpty(string) {
 	return string.trim().length > 0;
@@ -88,6 +109,8 @@ function isNotEmpty(string) {
  * @param {string} [options.encoding='utf-8'] - The encoding to use when writing files.
  * @param {string} [options.cwd=process.cwd()] - The cwd used if you try to generate some relative paths. Must be an absolute path.
  * @param {string} [options.cwd=process.cwd()] - The cwd used if you try to generate some relative paths. Must be an absolute path.
+ *
+ * @return {generate} A generate function which uses by default the options provided as generateGenerate parameters
  */
 function generateGenerate({
 	eventData,
@@ -148,6 +171,8 @@ function generateGenerate({
 	 * 
 	 * @param {GenerateConfig} generateConfig - The generate config contains all the file paths to generate.
 	 * @param {object} options - This options object can be used to overide some options defined in the generateGenerate function.
+	 *
+	 * @return {undefined}
 	 */
 	function generate(generateConfig, {
 		eventData = _eventData,
@@ -178,8 +203,10 @@ function generateGenerate({
 			})).map(file => new Promise((resolve, reject) => {
 
 				const fileContent = file.content;
-				function writeFilehandler(err){
-					emit('write');
+				function writeFilehandler(err, filepath){
+					emit('write', Object.assign({}, eventObject, {
+						filepath
+					}));
 					err ? reject(err) : resolve();
 				}
 
@@ -193,14 +220,19 @@ function generateGenerate({
 					const fileContentOptions = fileContent.options || {};
 					const filePathWriteFile = (fileContentOptions.writeFile || writeFile);
 					const filePathCwd = (fileContentOptions.cwd || cwd);
+					const absolutePath = relativeToAbsolute(filePathCwd, file.path);
 
-					filePathWriteFile(relativeToAbsolute(filePathCwd, file.path), fileContent.content,
+					filePathWriteFile(absolutePath, fileContent.content,
 						Object.assign({}, filePathOptions, fileContentOptions),
-						writeFilehandler
+						err => writeFilehandler(err, absolutePath)
 					);
 				}
 				else if(typeof fileContent === 'string'){
-					writeFile(relativeToAbsolute(cwd, file.path), fileContent, filePathOptions, writeFilehandler);
+					const absolutePath = relativeToAbsolute(cwd, file.path);
+
+					writeFile(absolutePath, fileContent, filePathOptions,
+						err => writeFilehandler(err, absolutePath)
+					);
 				}
 			}))).then(() => {
 				emit('finish', eventObject);

@@ -137,7 +137,63 @@ test.cb('write event', testDirectoryMacro, (t, directory) => {
 	})
 });
 
-test.todo('write event emmited after file was created');
+test.cb('write event emmited after file was created', testDirectoryMacro, (t, directory) => {
+	const generate = requireFromIndex('sources/generate')();
+
+	const filePathOne = mockGenerateConfigObjectKeyName({
+		depth: 1,
+		absolute: directory.path
+	});
+
+	const filePathTwo = mockGenerateConfigObjectKeyName({
+		depth: 2,
+		absolute: directory.path
+	});
+
+	const fileContentOne = mockFileContent();
+	const fileContentTwo = mockFileContent();
+
+	t.plan(7);
+
+	generate({
+		[filePathOne]: fileContentOne,
+		[filePathTwo]: fileContentTwo
+	});
+
+	const writtenFiles = [];
+
+	generate.on('write', event => {
+		t.is(typeof event, 'object');
+		t.is(typeof event.filepath, 'string');
+
+		writtenFiles.push(event.filepath);
+
+		directory.assertAllFilesExist([...directory.initialFilesList, {
+			path: event.filepath,
+			content: ({
+				[filePathOne]: fileContentOne,
+				[filePathTwo]: fileContentTwo
+			})[event.filepath]
+		}], ()=>{
+			end();
+		}, {ava_t: t});
+	});
+
+	generate.on('finish', ()=>{
+		t.is(writtenFiles.length, 2);
+		t.true(writtenFiles.includes(filePathOne));
+		t.true(writtenFiles.includes(filePathTwo));
+		end();
+	});
+
+	let endCallCount = 0;
+	function end() {
+		endCallCount++;
+		if (endCallCount === 3) {
+			t.end();
+		}
+	}
+});
 
 test.todo('write event off');
 
@@ -222,7 +278,7 @@ test.cb('default eventData', testDirectoryMacro, (t, directory) => {
 			t.deepEqual(event, {data: undefined});
 			t.pass();
 			t.end();
-		});
+		}, {ava_t: t});
 	});
 });
 
@@ -331,8 +387,6 @@ test.cb('override eventData using the generate function after using the instance
 		});
 	});
 });
-
-
 
 test.todo('event data with write events')
 

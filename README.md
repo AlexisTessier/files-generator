@@ -58,6 +58,8 @@ Create a generate function using the defined options
     -   `options.encoding` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** The encoding to use when writing files. (optional, default `'utf-8'`)
     -   `options.cwd` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** The cwd used if you try to generate some relative paths. Must be an absolute path. (optional, default `process.cwd()`)
 
+Returns **[generate](#generate)** A generate function which uses by default the options provided as generateGenerate parameters
+
 ### generate
 
 Generate files from different kinds of inputs
@@ -70,6 +72,8 @@ Generate files from different kinds of inputs
     -   `options.writeFile`   (optional, default `_writeFile`)
     -   `options.encoding`   (optional, default `_encoding`)
     -   `options.cwd`   (optional, default `_cwd`)
+
+Returns **[undefined](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/undefined)** 
 
 ## License
 

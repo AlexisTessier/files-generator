@@ -560,6 +560,15 @@ test.todo('override rootPath option using the generate function');
 test.todo('override rootPath option using the generate function after using the instance generator');
 test.todo('generate.use() simple string as content - rootPath option');
 
+/*---------------------------*/
+/*----- rootPath && cwd -----*/
+/*---------------------------*/
+
+test.todo('override rootPath and cwd options');
+
+/*-------------------*/
+/*-------------------*/
+/*-------------------*/
 
 test.todo('generate options - override');
 test.todo('generate options - backupStrategy');
