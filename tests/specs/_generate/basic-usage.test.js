@@ -116,4 +116,6 @@ test.cb('generate.use() simple string as content', generateMockingWriteFileMacro
 	});
 });
 
+test.todo('check events behaviour for each content type');
+
 test.todo('other content type - see roadmap draft');

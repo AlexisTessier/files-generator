@@ -91,7 +91,7 @@ test.cb('finish event off', t => {
 	});
 });
 
-test.cb('finish event off with multiple handler', t => {
+test.cb('finish event off with multiple handlers', t => {
 	const generate = requireFromIndex('sources/generate')();
 
 	generate();
@@ -195,15 +195,78 @@ test.cb('write event emmited after file was created', testDirectoryMacro, (t, di
 	}
 });
 
-test.todo('write event off');
+test.cb('write event off', testDirectoryMacro, (t, directory) => {
+	const generate = requireFromIndex('sources/generate')();
+
+	const filePathOne = mockGenerateConfigObjectKeyName({
+		depth: 2,
+		absolute: directory.path
+	});
+
+	const filePathTwo = mockGenerateConfigObjectKeyName({
+		depth: 2,
+		absolute: directory.path
+	});
+
+	const fileContentOne = mockFileContent();
+	const fileContentTwo = mockFileContent();
+
+	generate({
+		[filePathOne]: fileContentOne,
+		[filePathTwo]: fileContentTwo
+	});
+
+	let writeCallCount = 0;
+	const handler = event => {
+		writeCallCount++;
+	};
+
+	generate.on('write', handler);
+
+	generate.off('write', handler);
+
+	generate.on('finish', ()=>{
+		t.is(writeCallCount, 0);
+		t.end();
+	});
+});
+
+test.todo('write event off with multiple handlers');
 
 /*-----------------------*/
 
-test.todo('error event');
+test.todo('error event on - event not emitted if no errors');
 
-test.todo('error event on');
+test.todo('error event on - event emitted when writeFile function call the callback with an error');
+
+test.todo('error event on - event emitted multiple time');
 
 test.todo('error event off');
+
+test.todo('error event off with multiple handlers');
+
+/*-----------------------*/
+
+test.todo('generate multiple on for the same event (test with finish event)');
+test.todo('generate multiple off for the same event (test with finish event)');
+
+test.todo('generate multiple on for the same event (test with write event)');
+test.todo('generate multiple off for the same event (test with write event)');
+
+test.todo('generate multiple on for the same event (test with error event)');
+test.todo('generate multiple off for the same event (test with error event)');
+
+test.todo('generate multiple on for the same handler');
+test.todo('generate multiple off for the same handler');
+
+test.todo('generate multiple on for the same event and handler (test with finish event)');
+test.todo('generate multiple off for the same event and handler (test with finish event)');
+
+test.todo('generate multiple on for the same event and handler (test with write event)');
+test.todo('generate multiple off for the same event and handler (test with write event)');
+
+test.todo('generate multiple on for the same event and handler (test with error event)');
+test.todo('generate multiple off for the same event and handler (test with error event)');
 
 /*-----------------------*/
 
@@ -252,7 +315,7 @@ test.cb('generate.off()', t => {
 /*----- eventData ----*/
 /*--------------------*/
 
-test.cb('default eventData', testDirectoryMacro, (t, directory) => {
+test.cb('default eventData with finish event', testDirectoryMacro, (t, directory) => {
 	const generate = requireFromIndex('sources/generate')();
 
 	t.plan(4);
@@ -282,7 +345,7 @@ test.cb('default eventData', testDirectoryMacro, (t, directory) => {
 	});
 });
 
-test.cb('override eventData using the instance generator', testDirectoryMacro, (t, directory) => {
+test.cb('override eventData using the instance generator with finish event', testDirectoryMacro, (t, directory) => {
 	const data = 'data as string';
 
 	const generate = requireFromIndex('sources/generate')({
@@ -316,7 +379,7 @@ test.cb('override eventData using the instance generator', testDirectoryMacro, (
 	});
 });
 
-test.cb('override eventData using the generate function', testDirectoryMacro, (t, directory) => {
+test.cb('override eventData using the generate function with finish event', testDirectoryMacro, (t, directory) => {
 	const data = {dataKey: 'data value'};
 
 	const generate = requireFromIndex('sources/generate')();
@@ -351,7 +414,7 @@ test.cb('override eventData using the generate function', testDirectoryMacro, (t
 	});
 });
 
-test.cb('override eventData using the generate function after using the instance generator', testDirectoryMacro, (t, directory) => {
+test.cb('override eventData using the generate function after using the instance generator with finish event', testDirectoryMacro, (t, directory) => {
 	const data = 42;
 
 	const generate = requireFromIndex('sources/generate')({
@@ -388,6 +451,15 @@ test.cb('override eventData using the generate function after using the instance
 	});
 });
 
-test.todo('event data with write events')
+test.todo('default eventData with write event');
+test.todo('override eventData using the instance generator with write event');
+test.todo('override eventData using the generate function with write event');
+test.todo('override eventData using the generate function after using the instance generator with write event');
 
-test.todo('event data with error events')
+test.todo('default eventData with error event');
+test.todo('override eventData using the instance generator with error event');
+test.todo('override eventData using the generate function with error event');
+test.todo('override eventData using the generate function after using the instance generator with error event');
+
+test.todo('generate on with wrong arguments');
+test.todo('generate off with wrong arguments');
