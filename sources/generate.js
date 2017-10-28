@@ -217,10 +217,18 @@ function generateGenerate({
 
 				const fileContent = file.content;
 				function writeFilehandler(err, filepath){
-					emit('write', Object.assign({}, eventObject, {
-						filepath
-					}));
-					err ? reject(err) : resolve();
+					if (err) {
+						reject(new Error(
+							`Error writing file at path "${filepath}" => ${err.message}`
+						));
+					}
+					else{
+						emit('write', Object.assign({}, eventObject, {
+							filepath
+						}));
+
+						resolve();
+					}
 				}
 
 				const filePathOptions = {

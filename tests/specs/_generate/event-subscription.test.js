@@ -216,28 +216,145 @@ test.cb('write event off', testDirectoryMacro, (t, directory) => {
 		[filePathTwo]: fileContentTwo
 	});
 
-	let writeCallCount = 0;
-	const handler = event => {
-		writeCallCount++;
-	};
+	const handler = sinon.spy();
 
 	generate.on('write', handler);
 
 	generate.off('write', handler);
 
 	generate.on('finish', ()=>{
-		t.is(writeCallCount, 0);
+		t.true(handler.notCalled);
 		t.end();
 	});
 });
 
-test.todo('write event off with multiple handlers');
+test.cb('write event off with multiple handlers', testDirectoryMacro, (t, directory) => {
+	const generate = requireFromIndex('sources/generate')();
+
+	const filePathOne = mockGenerateConfigObjectKeyName({
+		depth: 2,
+		absolute: directory.path
+	});
+
+	const filePathTwo = mockGenerateConfigObjectKeyName({
+		depth: 2,
+		absolute: directory.path
+	});
+
+	const fileContentOne = mockFileContent();
+	const fileContentTwo = mockFileContent();
+
+	generate({
+		[filePathOne]: fileContentOne,
+		[filePathTwo]: fileContentTwo
+	});
+
+	const handler1 = sinon.spy();
+	const handler2 = sinon.spy();
+
+	generate.on('write', handler1);
+	generate.on('write', handler2);
+
+	generate.off('write', handler1);
+
+	generate.on('finish', ()=>{
+		t.true(handler1.notCalled);
+		t.true(handler2.calledTwice);
+
+		const filepathsWritten = [];
+		[0, 1].map(c => handler2.getCall(c).args).forEach(args => {
+			t.is(args.length, 1);
+			const event = args[0];
+
+			t.is(typeof event, 'object');
+			t.is(event.data, undefined);
+			filepathsWritten.push(event.filepath);
+		});
+
+		t.true(filepathsWritten.includes(filePathOne));
+		t.true(filepathsWritten.includes(filePathTwo));
+
+		t.end();
+	});
+});
 
 /*-----------------------*/
 
-test.todo('error event on - event not emitted if no errors');
+test.cb('error event on - event not emitted if no errors', testDirectoryMacro, (t, directory) => {
+	const generate = requireFromIndex('sources/generate')();
 
-test.todo('error event on - event emitted when writeFile function call the callback with an error');
+	const filePathOne = mockGenerateConfigObjectKeyName({
+		depth: 2,
+		absolute: directory.path
+	});
+
+	const filePathTwo = mockGenerateConfigObjectKeyName({
+		depth: 3,
+		absolute: directory.path
+	});
+
+	const fileContentOne = mockFileContent();
+	const fileContentTwo = mockFileContent();
+
+	generate({
+		[filePathOne]: fileContentOne,
+		[filePathTwo]: fileContentTwo
+	});
+
+	generate.on('error', ()=>{
+		t.fail();
+	});
+
+	generate.on('finish', ()=>{
+		t.end();
+	});
+});
+
+test.cb('error event on - event emitted when writeFile function call the callback with an error', testDirectoryMacro, (t, directory) => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(filePath, content, options, writeFileCallback){
+			writeFileCallback(new Error('write file error'));
+		}
+	});
+
+	const filePathOne = mockGenerateConfigObjectKeyName({
+		depth: 2,
+		absolute: directory.path
+	});
+
+	const fileContentOne = mockFileContent();
+
+	const filePathTwo = mockGenerateConfigObjectKeyName({
+		depth: 2,
+		absolute: directory.path
+	});
+
+	const fileContentTwo = mockFileContent();
+
+	generate({
+		[filePathOne]: fileContentOne,
+		[filePathTwo]: fileContentTwo
+	});
+
+	generate.on('error', event=>{
+		t.is(typeof event, 'object');
+		t.is(event.data, undefined);
+		t.true(event.error instanceof Error);
+		t.is(event.error.message, `Error writing file at path "${filePathOne}" => write file error`);
+		t.pass();
+		t.end();
+	})
+
+	generate.on('write', ()=>{
+		t.fail();
+	});
+
+	generate.on('finish', ()=>{
+		t.fail();
+	});
+});
+
+test.todo('error event on - event emitted when error happens in a eventListener');
 
 test.todo('error event on - event emitted multiple time');
 
