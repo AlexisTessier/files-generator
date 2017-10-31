@@ -2,6 +2,8 @@
 
 const test = require('ava');
 
+const sinon = require('sinon');
+
 const requireFromIndex = require('../../utils/require-from-index');
 
 const testDirectoryMacro = require('./test-directory.macro');
@@ -33,7 +35,7 @@ test('generate instance function returns null', t => {
 test.cb('generate a file from a simple string content', testDirectoryMacro, (t, directory) => {
 	const generate = requireFromIndex('sources/generate')();
 
-	t.plan(2);
+	t.plan(5);
 
 	const filePath = mockGenerateConfigObjectKeyName({
 		depth: 1,
@@ -47,8 +49,23 @@ test.cb('generate a file from a simple string content', testDirectoryMacro, (t, 
 
 	generate.on('error', () => t.fail());
 
-	generate.on('finish', ()=>{
-		t.pass();
+	const writeListener = sinon.spy();
+	generate.on('write', writeListener);
+
+	generate.on('finish', event=>{
+		t.deepEqual(event, {
+			data: undefined,
+			errors: [],
+			success: [filePath]
+		});
+
+		t.true(writeListener.calledOnce);
+		const writeArgs = writeListener.getCall(0).args;
+		t.is(writeArgs.length, 1);
+		t.deepEqual(writeArgs[0], {
+			data: undefined,
+			filepath: filePath
+		});
 
 		directory.assertAllFilesExist([...directory.initialFilesList, {
 			path: filePath,
