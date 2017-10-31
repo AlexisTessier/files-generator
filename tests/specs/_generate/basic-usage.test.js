@@ -45,6 +45,8 @@ test.cb('generate a file from a simple string content', testDirectoryMacro, (t, 
 		[filePath]: fileContent
 	});
 
+	generate.on('error', () => t.fail());
+
 	generate.on('finish', ()=>{
 		t.pass();
 
@@ -80,6 +82,8 @@ test.cb('generate files from a simple string content to a non-existent paths', t
 		[filePath2]: fileContent2
 	});
 
+	generate.on('error', () => t.fail());
+
 	generate.on('finish', ()=>{
 		t.pass();
 
@@ -105,6 +109,8 @@ test.cb('generate.use() simple string as content', generateMockingWriteFileMacro
 		[filePath]: generate.use(fileContent)
 	});
 
+	generate.on('error', () => t.fail());
+
 	generate.on('finish', event=>{
 		t.true(writeFile.calledOnce);
 		t.true(writeFile.withArgs(filePath, fileContent).calledOnce);
@@ -121,5 +127,7 @@ test.cb('generate.use() simple string as content', generateMockingWriteFileMacro
 });
 
 test.todo('check events behaviour for each content type');
+
+test.todo('trying to use unhandled content type');
 
 test.todo('other content type - see roadmap draft');

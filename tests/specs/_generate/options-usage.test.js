@@ -35,6 +35,8 @@ test.cb('default encoding', testDirectoryMacro, (t, directory) => {
 		[filePath]: fileContent
 	});
 
+	generate.on('error', ()=>t.fail());
+
 	generate.on('finish', ()=>{
 		t.pass();
 
@@ -68,6 +70,8 @@ test.cb('override encoding using the instance generator', testDirectoryMacro, (t
 		[filePath]: fileContent
 	});
 
+	generate.on('error', ()=>t.fail());
+
 	generate.on('finish', ()=>{
 		t.pass();
 
@@ -100,6 +104,8 @@ test.cb('override encoding using the generate function', testDirectoryMacro, (t,
 	}, {
 		encoding
 	});
+
+	generate.on('error', ()=>t.fail());
 
 	generate.on('finish', ()=>{
 		t.pass();
@@ -136,6 +142,8 @@ test.cb('override encoding using the generate function after using the instance 
 		encoding
 	});
 
+	generate.on('error', ()=>t.fail());
+
 	generate.on('finish', ()=>{
 		t.pass();
 
@@ -162,6 +170,8 @@ test.cb('generate.use() simple string as content - override encoding', generateM
 		[filePath1]: generate.use(fileContent1),
 		[filePath2]: generate.use(fileContent2, {encoding})
 	});
+
+	generate.on('error', ()=>t.fail());
 
 	generate.on('finish', event => {
 		t.is(writeFile.callCount, 2);
@@ -194,6 +204,8 @@ test.cb('default cwd', generateMockingWriteFileMacro, (t, writeFile, generate) =
 		[filePath]: fileContent
 	});
 
+	generate.on('error', ()=>t.fail());
+
 	generate.on('finish', ()=>{
 		t.true(writeFile.calledOnce);
 
@@ -220,6 +232,8 @@ test.cb('override cwd using the instance generator', t => {
 		[filePath]: fileContent
 	});
 
+	generate.on('error', ()=>t.fail());
+
 	generate.on('finish', ()=>{
 		t.true(writeFile.calledOnce);
 
@@ -245,6 +259,8 @@ test.cb('override cwd using the generate function', t => {
 		cwd,
 		writeFile
 	});
+
+	generate.on('error', ()=>t.fail());
 
 	generate.on('finish', ()=>{
 		t.true(writeFile.calledOnce);
@@ -274,6 +290,8 @@ test.cb('override cwd using the generate function after using the instance gener
 		writeFile
 	});
 
+	generate.on('error', ()=>t.fail());
+
 	generate.on('finish', ()=>{
 		t.true(writeFile.calledOnce);
 
@@ -293,6 +311,8 @@ test.cb('generate.use() simple string as content - override cwd', generateMockin
 	generate({
 		[filePath]: generate.use(fileContent, {cwd}),
 	});
+
+	generate.on('error', ()=>t.fail());
 
 	generate.on('finish', event => {
 		t.true(writeFile.calledOnce);
@@ -331,6 +351,8 @@ test.cb('override writeFile function using the instance generator', testDirector
 		[filePath]: fileContent
 	});
 
+	generate.on('error', ()=>t.fail());
+
 	generate.on('finish', ()=>{
 		t.pass();
 
@@ -364,6 +386,8 @@ test.cb('override writeFile function using the generate function', testDirectory
 		writeFile
 	});
 
+	generate.on('error', ()=>t.fail());
+
 	generate.on('finish', ()=>{
 		t.pass();
 
@@ -393,6 +417,8 @@ test.cb('override writeFile function using the instance generator - default opti
 		[filePath]: fileContent
 	});
 
+	generate.on('error', ()=>t.fail());
+
 	generate.on('finish', ()=>{
 		t.true(writeFile.calledOnce);
 
@@ -416,6 +442,8 @@ test.cb('override writeFile function using the generate function - default optio
 		writeFile
 	});
 
+	generate.on('error', ()=>t.fail());
+
 	generate.on('finish', ()=>{
 		t.true(writeFile.calledOnce);
 
@@ -438,6 +466,8 @@ test.cb('generate.use() simple string as content - override writeFile', generate
 		[filePath1]: generate.use(fileContent1),
 		[filePath2]: generate.use(fileContent2, {writeFile: writeFileBis})
 	});
+
+	generate.on('error', ()=>t.fail());
 
 	generate.on('finish', event => {
 		t.true(writeFile.calledOnce);
@@ -475,6 +505,8 @@ test.cb('override writeFile function using the instance generator - encoding opt
 		[filePath]: fileContent
 	});
 
+	generate.on('error', ()=>t.fail());
+
 	generate.on('finish', ()=>{
 		t.true(writeFile.calledOnce);
 
@@ -499,6 +531,8 @@ test.cb('override writeFile function using the instance generator - encoding opt
 	generate({
 		[filePath]: fileContent
 	}, { encoding });
+
+	generate.on('error', ()=>t.fail());
 
 	generate.on('finish', ()=>{
 		t.true(writeFile.calledOnce);
@@ -526,6 +560,8 @@ test.cb('override writeFile function using the generate function - encoding opti
 		encoding
 	});
 
+	generate.on('error', ()=>t.fail());
+
 	generate.on('finish', ()=>{
 		t.true(writeFile.calledOnce);
 
@@ -552,6 +588,8 @@ test.cb('override writeFile function using the generate function - encoding opti
 	}, {
 		writeFile
 	});
+
+	generate.on('error', ()=>t.fail());
 
 	generate.on('finish', ()=>{
 		t.true(writeFile.calledOnce);
@@ -605,6 +643,8 @@ test.cb('generate.use() simple string as content - override all the options', ge
 			cwd
 		}),
 	});
+
+	generate.on('error', ()=>t.fail());
 
 	generate.on('finish', () => {
 		t.true(writeFile.notCalled);

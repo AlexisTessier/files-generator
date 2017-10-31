@@ -51,6 +51,8 @@ test.cb('finish event', t => {
 
 	generate();
 
+	generate.on('error', () => t.fail());
+
 	generate.on('finish', event=>{
 		t.true(event.errors instanceof Array);
 		t.is(event.errors.length, 0);
@@ -68,6 +70,8 @@ test.cb('finish event on', t => {
 	generate();
 
 	const pass = sinon.spy();
+
+	generate.on('error', () => t.fail());
 
 	generate.on('finish', pass);
 
@@ -89,6 +93,8 @@ test.cb('finish event off', t => {
 	generate();
 
 	const pass = sinon.spy();
+
+	generate.on('error', () => t.fail());
 
 	generate.on('finish', pass);
 	generate.off('finish', pass);
@@ -113,6 +119,8 @@ test.cb('finish event off with multiple handlers', t => {
 
 	const pass = sinon.spy();
 	const pass2 = sinon.spy();
+
+	generate.on('error', () => t.fail());
 
 	generate.on('finish', pass2);
 	generate.on('finish', pass);
@@ -159,9 +167,7 @@ test.cb('write event', testDirectoryMacro, (t, directory) => {
 
 	const success = [];
 
-	generate.on('error', ()=>{
-		t.fail();
-	});
+	generate.on('error', () => t.fail());
 
 	generate.on('write', event => {
 		t.is(typeof event, 'object');
@@ -230,9 +236,7 @@ test.cb('write event off', testDirectoryMacro, (t, directory) => {
 
 	const handler = sinon.spy();
 
-	generate.on('error', ()=>{
-		t.fail();
-	});
+	generate.on('error', () => t.fail());
 
 	generate.on('write', handler);
 
@@ -267,6 +271,8 @@ test.cb('write event off with multiple handlers', testDirectoryMacro, (t, direct
 
 	const handler1 = sinon.spy();
 	const handler2 = sinon.spy();
+
+	generate.on('error', () => t.fail());
 
 	generate.on('write', handler1);
 	generate.on('write', handler2);
@@ -317,9 +323,7 @@ test.cb('error event on - event not emitted if no errors', testDirectoryMacro, (
 		[filePathTwo]: fileContentTwo
 	});
 
-	generate.on('error', ()=>{
-		t.fail();
-	});
+	generate.on('error', () => t.fail());
 
 	generate.on('finish', event=>{
 		t.is(typeof event, 'object');
@@ -373,9 +377,7 @@ test.cb('error event on - event emitted when writeFile function call the callbac
 		});
 	})
 
-	generate.on('write', ()=>{
-		t.fail();
-	});
+	generate.on('write', () => t.fail());
 
 	generate.on('finish', event=>{
 		t.is(errors.length, 2);
@@ -439,7 +441,6 @@ test.cb('error event on - mixed error with no errors', testDirectoryMacro, (t, d
 	});
 
 	const errors = [];
-	const success = [];
 	generate.on('error', event=>{
 		t.is(typeof event, 'object');
 		t.is(event.data, undefined);
@@ -451,6 +452,7 @@ test.cb('error event on - mixed error with no errors', testDirectoryMacro, (t, d
 		});
 	});
 
+	const success = [];
 	generate.on('write', event=>{
 		t.is(typeof event, 'object');
 		t.is(event.data, undefined);
@@ -530,7 +532,6 @@ test.cb('error event on - mixed errors event emitted when writeFile function thr
 	});
 
 	const errors = [];
-	const success = [];
 	generate.on('error', event=>{
 		t.is(typeof event, 'object');
 		t.is(event.data, undefined);
@@ -542,6 +543,7 @@ test.cb('error event on - mixed errors event emitted when writeFile function thr
 		});
 	});
 
+	const success = [];
 	generate.on('write', event=>{
 		t.is(typeof event, 'object');
 		t.is(event.data, undefined);
@@ -609,9 +611,7 @@ test.cb('error event off', testDirectoryMacro, (t, directory) => {
 	generate.on('error', listener);
 	generate.off('error', listener);
 
-	generate.on('write', ()=>{
-		t.fail();
-	});
+	generate.on('write', ()=>t.fail());
 
 	generate.on('finish', ()=>{
 		t.true(listener.notCalled);
@@ -652,9 +652,7 @@ test.cb('error event off with multiple handlers', testDirectoryMacro, (t, direct
 	generate.on('error', listener2);
 	generate.off('error', listener1);
 
-	generate.on('write', ()=>{
-		t.fail();
-	});
+	generate.on('write', ()=>t.fail());
 
 	generate.on('finish', ()=>{
 		t.true(listener1.notCalled);
@@ -679,6 +677,8 @@ test.cb('generate multiple on for the same event (test with finish event)', t =>
 
 	const listener1 = sinon.spy();
 	const listener2 = sinon.spy();
+
+	generate.on('error', ()=>t.fail());
 
 	generate.on('finish', listener1);
 	generate.on('finish', listener2);
@@ -707,6 +707,8 @@ test.cb('generate multiple off for the same event (test with finish event)', t =
 	const listener2 = sinon.spy();
 	const listener3 = sinon.spy();
 	const listener4 = sinon.spy();
+
+	generate.on('error', ()=>t.fail());
 
 	generate.on('finish', listener1);
 	generate.on('finish', listener2);
@@ -741,6 +743,8 @@ test.cb('generate multiple on for the same event (test with write event)', t => 
 	const listener1 = sinon.spy();
 	const listener2 = sinon.spy();
 
+	generate.on('error', ()=>t.fail());
+
 	generate.on('write', listener1);
 	generate.on('write', listener2);
 
@@ -768,6 +772,8 @@ test.cb('generate multiple off for the same event (test with write event)', t =>
 	const listener2 = sinon.spy();
 	const listener3 = sinon.spy();
 	const listener4 = sinon.spy();
+
+	generate.on('error', ()=>t.fail());
 
 	generate.on('write', listener1);
 	generate.on('write', listener2);
@@ -852,7 +858,89 @@ test.cb('generate multiple off for the same event (test with error event)', t =>
 	});
 });
 
-test.todo('generate multiple on for the same listener');
+test.cb('generate multiple on for the same listener', t => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opt, cl){
+			cl(ct === 'error' ? new Error('error writing file mock') : null);
+		}
+	});
+
+	generate({
+		'/filepath/fake/file1.js': 'error',
+		'/filepath/fake/file2.js': 'fake content 2',
+		'/filepath/fake/file3.js': 'fake content 1',
+		'/filepath/fake/file4.js': 'error',
+		'/filepath/fake/file5.js': 'error'
+	});
+
+	const listener = sinon.spy();
+
+	generate.on('write', listener);
+	generate.on('error', listener);
+	generate.on('finish', listener);
+
+	generate.on('finish', () => {
+		t.is(listener.callCount, 6);
+
+		const call0 = listener.getCall(0).args;
+		t.is(call0.length, 1);
+		const event0 = call0[0];
+		t.is(typeof event0, 'object');
+		t.deepEqual(Object.keys(event0), ['data', 'filepath', 'error']);
+		t.is(event0.data, undefined);
+		t.is(event0.filepath, '/filepath/fake/file1.js');
+		t.true(event0.error instanceof Error);
+		t.is(event0.error.message, 'error writing file mock');
+
+		const call1 = listener.getCall(1).args;
+		t.is(call1.length, 1);
+		const event1 = call1[0];
+		t.is(typeof event1, 'object');
+		t.deepEqual(Object.keys(event1), ['data', 'filepath']);
+		t.is(event1.data, undefined);
+		t.is(event1.filepath, '/filepath/fake/file2.js');
+
+		const call2 = listener.getCall(2).args;
+		t.is(call2.length, 1);
+		const event2 = call2[0];
+		t.is(typeof event2, 'object');
+		t.deepEqual(Object.keys(event2), ['data', 'filepath']);
+		t.is(event2.data, undefined);
+		t.is(event2.filepath, '/filepath/fake/file3.js');
+
+		const call3 = listener.getCall(3).args;
+		t.is(call3.length, 1);
+		const event3 = call3[0];
+		t.is(typeof event3, 'object');
+		t.deepEqual(Object.keys(event3), ['data', 'filepath', 'error']);
+		t.is(event3.data, undefined);
+		t.is(event3.filepath, '/filepath/fake/file4.js');
+		t.true(event3.error instanceof Error);
+		t.is(event3.error.message, 'error writing file mock');
+
+		const call4 = listener.getCall(4).args;
+		t.is(call4.length, 1);
+		const event4 = call4[0];
+		t.is(typeof event4, 'object');
+		t.deepEqual(Object.keys(event4), ['data', 'filepath', 'error']);
+		t.is(event4.data, undefined);
+		t.is(event4.filepath, '/filepath/fake/file5.js');
+		t.true(event4.error instanceof Error);
+		t.is(event4.error.message, 'error writing file mock');
+
+		const call5 = listener.getCall(5).args;
+		t.is(call5.length, 1);
+		const event5 = call5[0];
+		t.is(typeof event5, 'object');
+		t.deepEqual(Object.keys(event5), ['data', 'errors', 'success']);
+		t.is(event5.data, undefined);
+		t.deepEqual(event5.errors, ['/filepath/fake/file1.js', '/filepath/fake/file4.js', '/filepath/fake/file5.js']);
+		t.deepEqual(event5.success, ['/filepath/fake/file2.js', '/filepath/fake/file3.js']);
+
+		t.end();
+	});
+});
+
 test.todo('generate multiple off for the same listener');
 
 test.todo('generate multiple on for the same event and listener (test with finish event)');
@@ -926,6 +1014,8 @@ test.cb('default eventData with finish event', testDirectoryMacro, (t, directory
 		[filePath]: fileContent
 	});
 
+	generate.on('error', ()=>t.fail());
+
 	generate.on('finish', event => {
 		t.pass();
 
@@ -964,6 +1054,8 @@ test.cb('override eventData using the instance generator with finish event', tes
 		[filePath]: fileContent
 	});
 
+	generate.on('error', ()=>t.fail());
+
 	generate.on('finish', event=>{
 		t.pass();
 
@@ -1001,6 +1093,8 @@ test.cb('override eventData using the generate function with finish event', test
 	}, {
 		eventData: data
 	});
+
+	generate.on('error', ()=>t.fail());
 
 	generate.on('finish', event=>{
 		t.pass();
@@ -1064,6 +1158,8 @@ test.cb('override eventData using the generate function after using the instance
 		});
 	});
 });
+
+/*----------------*/
 
 test.cb('default eventData with write event', testDirectoryMacro, (t, directory) => {
 	const generate = requireFromIndex('sources/generate')();
@@ -1219,10 +1315,123 @@ test.cb('override eventData using the generate function after using the instance
 	});
 });
 
-test.todo('default eventData with error event');
-test.todo('override eventData using the instance generator with error event');
-test.todo('override eventData using the generate function with error event');
-test.todo('override eventData using the generate function after using the instance generator with error event');
+/*----------------*/
+
+test.cb('default eventData with error event', testDirectoryMacro, (t, directory) => {
+	const writeFileError = new Error('writefile callback error');
+
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opts, cb){
+			cb(writeFileError);
+		}
+	});
+
+	generate({
+		'/absolute/file/path/file.js': 'file content'
+	});
+
+	generate.on('write', () => t.fail());
+
+	generate.on('error', event => {
+		t.is(typeof event, 'object');
+		t.deepEqual(event, {
+			data: undefined,
+			error: writeFileError,
+			filepath: '/absolute/file/path/file.js'
+		});
+		t.end();
+	});
+});
+
+test.cb('override eventData using the instance generator with error event', testDirectoryMacro, (t, directory) => {
+	const writeFileError = new Error('writefile callback error');
+
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opts, cb){
+			cb(writeFileError);
+		},
+		eventData: 'data as string test'
+	});
+
+	generate({
+		'/absolute/file/path/file.js': 'file content'
+	});
+
+	generate.on('write', () => t.fail());
+
+	generate.on('error', event => {
+		t.is(typeof event, 'object');
+		t.deepEqual(event, {
+			data: 'data as string test',
+			error: writeFileError,
+			filepath: '/absolute/file/path/file.js'
+		});
+		t.end();
+	});
+});
+
+test.cb('override eventData using the generate function with error event', testDirectoryMacro, (t, directory) => {
+	const writeFileError = new Error('writefile callback error');
+
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opts, cb){
+			cb(writeFileError);
+		}
+	});
+
+	generate({
+		'/absolute/file/path/file.js': 'file content'
+	}, {
+		eventData: {
+			dataKey: 'data value',
+			dataKey2: 'other data value'
+		}
+	});
+
+	generate.on('write', () => t.fail());
+
+	generate.on('error', event => {
+		t.is(typeof event, 'object');
+		t.deepEqual(event, {
+			data: {
+				dataKey: 'data value',
+				dataKey2: 'other data value'
+			},
+			error: writeFileError,
+			filepath: '/absolute/file/path/file.js'
+		});
+		t.end();
+	});
+});
+
+test.cb('override eventData using the generate function after using the instance generator with error event', testDirectoryMacro, (t, directory) => {
+	const writeFileError = new Error('writefile callback error');
+
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opts, cb){
+			cb(writeFileError);
+		},
+		eventData: 'string data'
+	});
+
+	generate({
+		'/absolute/file/path/file.js': 'file content'
+	}, {
+		eventData: 42
+	});
+
+	generate.on('write', () => t.fail());
+
+	generate.on('error', event => {
+		t.is(typeof event, 'object');
+		t.deepEqual(event, {
+			data: 42,
+			error: writeFileError,
+			filepath: '/absolute/file/path/file.js'
+		});
+		t.end();
+	});
+});
 
 /*----------------*/
 
