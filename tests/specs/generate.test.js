@@ -50,3 +50,5 @@ test('Basic usage', featureHasTestFileMacro, 'basic-usage');
 test('Options and options overrides usage', featureHasTestFileMacro, 'options-usage');
 test('Multiple generate calls', featureHasTestFileMacro, 'multiple-generate-calls');
 test('Errors handling', featureHasTestFileMacro, 'errors-handling');
+
+test.todo('TESTS ARCHITECTURE : Add generate on error t.fail in all tests')

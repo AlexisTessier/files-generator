@@ -110,7 +110,11 @@ test.cb('generate.use() simple string as content', generateMockingWriteFileMacro
 		t.true(writeFile.withArgs(filePath, fileContent).calledOnce);
 		writeFileCallExpectOptionsMacro(t, writeFile, 0, {});
 
-		t.deepEqual(event, {data: undefined});
+		t.deepEqual(event, {
+			data: undefined,
+			errors: [],
+			success: [filePath]
+		});
 
 		t.end();
 	});

@@ -49,12 +49,15 @@ test('generate.listenableEvents', t => {
 test.cb('finish event', t => {
 	const generate = requireFromIndex('sources/generate')();
 
-	t.plan(1);
-
 	generate();
 
-	generate.on('finish', ()=>{
-		t.pass();
+	generate.on('finish', event=>{
+		t.true(event.errors instanceof Array);
+		t.is(event.errors.length, 0);
+
+		t.true(event.success instanceof Array);
+		t.is(event.success.length, 0);
+
 		t.end();
 	});
 });
@@ -68,7 +71,13 @@ test.cb('finish event on', t => {
 
 	generate.on('finish', pass);
 
-	generate.on('finish', ()=>{
+	generate.on('finish', event=>{
+		t.true(event.errors instanceof Array);
+		t.is(event.errors.length, 0);
+
+		t.true(event.success instanceof Array);
+		t.is(event.success.length, 0);
+
 		t.true(pass.calledOnce);
 		t.end();
 	});
@@ -84,7 +93,13 @@ test.cb('finish event off', t => {
 	generate.on('finish', pass);
 	generate.off('finish', pass);
 
-	generate.on('finish', ()=>{
+	generate.on('finish', event=>{
+		t.true(event.errors instanceof Array);
+		t.is(event.errors.length, 0);
+
+		t.true(event.success instanceof Array);
+		t.is(event.success.length, 0);
+
 		t.true(pass.notCalled);
 		t.pass();
 		t.end();
@@ -103,7 +118,13 @@ test.cb('finish event off with multiple handlers', t => {
 	generate.on('finish', pass);
 	generate.off('finish', pass);
 
-	generate.on('finish', ()=>{
+	generate.on('finish', event=>{
+		t.true(event.errors instanceof Array);
+		t.is(event.errors.length, 0);
+
+		t.true(event.success instanceof Array);
+		t.is(event.success.length, 0);
+
 		t.true(pass.notCalled);
 		t.true(pass2.calledOnce);
 		t.pass();
@@ -114,30 +135,6 @@ test.cb('finish event off with multiple handlers', t => {
 /*-----------------------*/
 
 test.cb('write event', testDirectoryMacro, (t, directory) => {
-	const generate = requireFromIndex('sources/generate')();
-
-	t.plan(3);
-
-	const filePathOne = path.join(directory.path, 'john-connor.txt');
-	const filePathTwo = path.join(directory.path, 'sarah-connor.txt');
-	const filePathThree = path.join(directory.path, 'T-800.txt');
-
-	generate({
-		[filePathOne]: 'Son of Sarah Connor and saviour of the humanity.',
-		[filePathTwo]: 'Mother of John Connor',
-		[filePathThree]: 'Governator of California'
-	});
-
-	generate.on('write', ()=>{
-		t.pass();
-	});
-
-	generate.on('finish', ()=>{
-		t.end();
-	})
-});
-
-test.cb('write event emmited after file was created', testDirectoryMacro, (t, directory) => {
 	const generate = requireFromIndex('sources/generate')();
 
 	const filePathOne = mockGenerateConfigObjectKeyName({
@@ -153,20 +150,24 @@ test.cb('write event emmited after file was created', testDirectoryMacro, (t, di
 	const fileContentOne = mockFileContent();
 	const fileContentTwo = mockFileContent();
 
-	t.plan(7);
-
 	generate({
 		[filePathOne]: fileContentOne,
 		[filePathTwo]: fileContentTwo
 	});
 
-	const writtenFiles = [];
+	t.plan(14)
+
+	const success = [];
+
+	generate.on('error', ()=>{
+		t.fail();
+	});
 
 	generate.on('write', event => {
 		t.is(typeof event, 'object');
 		t.is(typeof event.filepath, 'string');
 
-		writtenFiles.push(event.filepath);
+		success.push(event.filepath);
 
 		directory.assertAllFilesExist([...directory.initialFilesList, {
 			path: event.filepath,
@@ -179,10 +180,21 @@ test.cb('write event emmited after file was created', testDirectoryMacro, (t, di
 		}, {ava_t: t});
 	});
 
-	generate.on('finish', ()=>{
-		t.is(writtenFiles.length, 2);
-		t.true(writtenFiles.includes(filePathOne));
-		t.true(writtenFiles.includes(filePathTwo));
+	generate.on('finish', event=>{
+		t.is(typeof event, 'object');
+
+		t.true(event.errors instanceof Array);
+		t.is(event.errors.length, 0);
+
+		t.true(event.success instanceof Array);
+		t.is(event.success.length, 2);
+		t.true(event.success.includes(filePathOne));
+		t.true(event.success.includes(filePathTwo));
+
+		t.is(success.length, 2);
+		t.true(success.includes(filePathOne));
+		t.true(success.includes(filePathTwo));
+
 		end();
 	});
 
@@ -217,6 +229,10 @@ test.cb('write event off', testDirectoryMacro, (t, directory) => {
 	});
 
 	const handler = sinon.spy();
+
+	generate.on('error', ()=>{
+		t.fail();
+	});
 
 	generate.on('write', handler);
 
@@ -305,14 +321,22 @@ test.cb('error event on - event not emitted if no errors', testDirectoryMacro, (
 		t.fail();
 	});
 
-	generate.on('finish', ()=>{
+	generate.on('finish', event=>{
+		t.is(typeof event, 'object');
+
+		t.true(event.errors instanceof Array);
+		t.is(event.errors.length, 0);
+
+		t.true(event.success instanceof Array);
+		t.is(event.success.length, 2);
+
 		t.end();
 	});
 });
 
 test.cb('error event on - event emitted when writeFile function call the callback with an error', testDirectoryMacro, (t, directory) => {
 	const generate = requireFromIndex('sources/generate')({
-		writeFile(filePath, content, options, writeFileCallback){
+		writeFile(filepath, content, options, writeFileCallback){
 			writeFileCallback(new Error('write file error'));
 		}
 	});
@@ -336,54 +360,509 @@ test.cb('error event on - event emitted when writeFile function call the callbac
 		[filePathTwo]: fileContentTwo
 	});
 
+	const errors = [];
 	generate.on('error', event=>{
 		t.is(typeof event, 'object');
 		t.is(event.data, undefined);
 		t.true(event.error instanceof Error);
-		t.is(event.error.message, `Error writing file at path "${filePathOne}" => write file error`);
-		t.pass();
-		t.end();
+		t.is(typeof event.filepath, 'string');
+
+		errors.push({
+			filepath: event.filepath,
+			error: event.error
+		});
 	})
 
 	generate.on('write', ()=>{
 		t.fail();
 	});
 
-	generate.on('finish', ()=>{
-		t.fail();
+	generate.on('finish', event=>{
+		t.is(errors.length, 2);
+		t.is(errors[0].filepath, filePathOne);
+		t.is(errors[0].error.message, `write file error`);
+		t.is(errors[1].filepath, filePathTwo);
+		t.is(errors[1].error.message, `write file error`);
+
+		t.true(event.errors instanceof Array);
+		t.is(event.errors.length, 2);
+
+		t.true(event.success instanceof Array);
+		t.is(event.success.length, 0);
+
+		t.is(event.errors[0], filePathOne);
+		t.is(event.errors[1], filePathTwo);
+		t.end();
 	});
 });
 
-test.todo('error event on - event emitted when error happens in a eventListener');
+test.cb('error event on - mixed error with no errors', testDirectoryMacro, (t, directory) => {
+	const filePathOne = mockGenerateConfigObjectKeyName({
+		depth: 2,
+		absolute: directory.path
+	});
 
-test.todo('error event on - event emitted multiple time');
+	const filePathThree = mockGenerateConfigObjectKeyName({
+		depth: 1,
+		absolute: directory.path
+	});
 
-test.todo('error event off');
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(filepath, content, options, writeFileCallback){
+			writeFileCallback((
+				filepath === filePathOne || filepath === filePathThree
+			) ? null : new Error('mixed write file error'));
+		}
+	});
 
-test.todo('error event off with multiple handlers');
+	const fileContentOne = mockFileContent();
+
+	const filePathTwo = mockGenerateConfigObjectKeyName({
+		depth: 2,
+		absolute: directory.path
+	});
+
+	const filePathFour = mockGenerateConfigObjectKeyName({
+		depth: 3,
+		absolute: directory.path
+	});
+
+	const fileContentTwo = mockFileContent();
+	const fileContentThree = mockFileContent();
+	const fileContentFour = mockFileContent();
+
+	generate({
+		[filePathOne]: fileContentOne,
+		[filePathTwo]: fileContentTwo,
+		[filePathThree]: fileContentThree,
+		[filePathFour]: fileContentFour
+	});
+
+	const errors = [];
+	const success = [];
+	generate.on('error', event=>{
+		t.is(typeof event, 'object');
+		t.is(event.data, undefined);
+		t.true(event.error instanceof Error);
+		t.is(typeof event.filepath, 'string');
+		errors.push({
+			filepath: event.filepath,
+			error: event.error
+		});
+	});
+
+	generate.on('write', event=>{
+		t.is(typeof event, 'object');
+		t.is(event.data, undefined);
+		t.is(typeof event.filepath, 'string');
+		success.push(event.filepath);
+	});
+
+	generate.on('finish', event=>{
+		t.is(errors.length, 2);
+		t.is(success.length, 2);
+
+		t.is(errors[0].filepath, filePathTwo);
+		t.is(errors[0].error.message, `mixed write file error`);
+		t.is(errors[1].filepath, filePathFour);
+		t.is(errors[1].error.message, `mixed write file error`);
+
+		t.is(success[0], filePathOne);
+		t.is(success[1], filePathThree);
+
+		t.is(typeof event, 'object');
+
+		t.true(event.errors instanceof Array);
+		t.true(event.success instanceof Array);
+		t.is(event.errors.length, 2);
+		t.is(event.success.length, 2);
+		t.is(event.errors[0], filePathTwo);
+		t.is(event.errors[1], filePathFour);
+
+		t.is(event.success[0], filePathOne);
+		t.is(event.success[1], filePathThree);
+
+		t.end();
+	});
+});
+
+test.cb('error event on - mixed errors event emitted when writeFile function throws an error', testDirectoryMacro, (t, directory) => {
+	const filePathOne = mockGenerateConfigObjectKeyName({
+		depth: 2,
+		absolute: directory.path
+	});
+
+	const filePathThree = mockGenerateConfigObjectKeyName({
+		depth: 1,
+		absolute: directory.path
+	});
+
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(filepath, content, options, writeFileCallback){
+			if (filepath === filePathOne || filepath === filePathThree) {
+				throw new Error('mixed write file error');
+			}
+			writeFileCallback(null);
+		}
+	});
+
+	const fileContentOne = mockFileContent();
+
+	const filePathTwo = mockGenerateConfigObjectKeyName({
+		depth: 2,
+		absolute: directory.path
+	});
+
+	const filePathFour = mockGenerateConfigObjectKeyName({
+		depth: 3,
+		absolute: directory.path
+	});
+
+	const fileContentTwo = mockFileContent();
+	const fileContentThree = mockFileContent();
+	const fileContentFour = mockFileContent();
+
+	generate({
+		[filePathOne]: fileContentOne,
+		[filePathTwo]: fileContentTwo,
+		[filePathThree]: fileContentThree,
+		[filePathFour]: fileContentFour
+	});
+
+	const errors = [];
+	const success = [];
+	generate.on('error', event=>{
+		t.is(typeof event, 'object');
+		t.is(event.data, undefined);
+		t.is(typeof event.filepath, 'string');
+		t.true(event.error instanceof Error);
+		errors.push({
+			filepath: event.filepath,
+			error: event.error
+		});
+	});
+
+	generate.on('write', event=>{
+		t.is(typeof event, 'object');
+		t.is(event.data, undefined);
+		t.is(typeof event.filepath, 'string');
+		success.push(event.filepath);
+	});
+
+	generate.on('finish', event=>{
+		t.is(errors.length, 2);
+		t.is(success.length, 2);
+
+		t.is(errors[0].filepath, filePathOne);
+		t.is(errors[0].error.message, `mixed write file error`);
+		t.is(errors[1].filepath, filePathThree);
+		t.is(errors[1].error.message, `mixed write file error`);
+
+		t.is(success[0], filePathTwo);
+		t.is(success[1], filePathFour);
+
+		t.is(typeof event, 'object');
+
+		t.true(event.errors instanceof Array);
+		t.true(event.success instanceof Array);
+		t.is(event.errors.length, 2);
+		t.is(event.success.length, 2);
+
+		t.is(event.errors[0], filePathOne);
+		t.is(event.errors[1], filePathThree);
+
+		t.is(event.success[0], filePathTwo);
+		t.is(event.success[1], filePathFour);
+
+		t.end();
+	});
+});
+
+test.cb('error event off', testDirectoryMacro, (t, directory) => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(filepath, content, options, writeFileCallback){
+			writeFileCallback(new Error('write file error'));
+		}
+	});
+
+	const filePathOne = mockGenerateConfigObjectKeyName({
+		depth: 2,
+		absolute: directory.path
+	});
+
+	const fileContentOne = mockFileContent();
+
+	const filePathTwo = mockGenerateConfigObjectKeyName({
+		depth: 2,
+		absolute: directory.path
+	});
+
+	const fileContentTwo = mockFileContent();
+
+	generate({
+		[filePathOne]: fileContentOne,
+		[filePathTwo]: fileContentTwo
+	});
+
+	const listener = sinon.spy();
+
+	generate.on('error', listener);
+	generate.off('error', listener);
+
+	generate.on('write', ()=>{
+		t.fail();
+	});
+
+	generate.on('finish', ()=>{
+		t.true(listener.notCalled);
+		t.end();
+	});
+});
+
+test.cb('error event off with multiple handlers', testDirectoryMacro, (t, directory) => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(filepath, content, options, writeFileCallback){
+			writeFileCallback(new Error('write file error'));
+		}
+	});
+
+	const filePathOne = mockGenerateConfigObjectKeyName({
+		depth: 2,
+		absolute: directory.path
+	});
+
+	const fileContentOne = mockFileContent();
+
+	const filePathTwo = mockGenerateConfigObjectKeyName({
+		depth: 2,
+		absolute: directory.path
+	});
+
+	const fileContentTwo = mockFileContent();
+
+	generate({
+		[filePathOne]: fileContentOne,
+		[filePathTwo]: fileContentTwo
+	});
+
+	const listener1 = sinon.spy();
+	const listener2 = sinon.spy();
+
+	generate.on('error', listener1);
+	generate.on('error', listener2);
+	generate.off('error', listener1);
+
+	generate.on('write', ()=>{
+		t.fail();
+	});
+
+	generate.on('finish', ()=>{
+		t.true(listener1.notCalled);
+		t.true(listener2.calledTwice);
+		t.end();
+	});
+});
 
 /*-----------------------*/
 
-test.todo('generate multiple on for the same event (test with finish event)');
-test.todo('generate multiple off for the same event (test with finish event)');
+test.cb('generate multiple on for the same event (test with finish event)', t => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opt, cl){
+			cl(null);
+		}
+	});
 
-test.todo('generate multiple on for the same event (test with write event)');
-test.todo('generate multiple off for the same event (test with write event)');
+	generate({
+		'/filepath/fake/file.js': 'fake content 1',
+		'/filepath/fake/file2.js': 'fake content 2'
+	});
 
-test.todo('generate multiple on for the same event (test with error event)');
-test.todo('generate multiple off for the same event (test with error event)');
+	const listener1 = sinon.spy();
+	const listener2 = sinon.spy();
 
-test.todo('generate multiple on for the same handler');
-test.todo('generate multiple off for the same handler');
+	generate.on('finish', listener1);
+	generate.on('finish', listener2);
 
-test.todo('generate multiple on for the same event and handler (test with finish event)');
-test.todo('generate multiple off for the same event and handler (test with finish event)');
+	generate.on('finish', ()=>{
+		t.true(listener1.calledOnce);
+		t.true(listener2.calledOnce);
 
-test.todo('generate multiple on for the same event and handler (test with write event)');
-test.todo('generate multiple off for the same event and handler (test with write event)');
+		t.end();
+	});
+});
 
-test.todo('generate multiple on for the same event and handler (test with error event)');
-test.todo('generate multiple off for the same event and handler (test with error event)');
+test.cb('generate multiple off for the same event (test with finish event)', t => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opt, cl){
+			cl(null);
+		}
+	});
+
+	generate({
+		'/filepath/fake/file.js': 'fake content 1',
+		'/filepath/fake/file2.js': 'fake content 2'
+	});
+
+	const listener1 = sinon.spy();
+	const listener2 = sinon.spy();
+	const listener3 = sinon.spy();
+	const listener4 = sinon.spy();
+
+	generate.on('finish', listener1);
+	generate.on('finish', listener2);
+	generate.on('finish', listener3);
+	generate.on('finish', listener4);
+
+	generate.off('finish', listener2);
+	generate.off('finish', listener3);
+
+	generate.on('finish', ()=>{
+		t.true(listener1.calledOnce);
+		t.true(listener2.notCalled);
+		t.true(listener3.notCalled);
+		t.true(listener4.calledOnce);
+
+		t.end();
+	});
+});
+
+test.cb('generate multiple on for the same event (test with write event)', t => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opt, cl){
+			cl(null);
+		}
+	});
+
+	generate({
+		'/filepath/fake/file.js': 'fake content 1',
+		'/filepath/fake/file2.js': 'fake content 2'
+	});
+
+	const listener1 = sinon.spy();
+	const listener2 = sinon.spy();
+
+	generate.on('write', listener1);
+	generate.on('write', listener2);
+
+	generate.on('finish', ()=>{
+		t.true(listener1.calledTwice);
+		t.true(listener2.calledTwice);
+
+		t.end();
+	});
+});
+
+test.cb('generate multiple off for the same event (test with write event)', t => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opt, cl){
+			cl(null);
+		}
+	});
+
+	generate({
+		'/filepath/fake/file.js': 'fake content 1',
+		'/filepath/fake/file2.js': 'fake content 2'
+	});
+
+	const listener1 = sinon.spy();
+	const listener2 = sinon.spy();
+	const listener3 = sinon.spy();
+	const listener4 = sinon.spy();
+
+	generate.on('write', listener1);
+	generate.on('write', listener2);
+	generate.on('write', listener3);
+	generate.on('write', listener4);
+
+	generate.off('write', listener2);
+	generate.off('write', listener3);
+
+	generate.on('finish', ()=>{
+		t.true(listener1.calledTwice);
+		t.true(listener2.notCalled);
+		t.true(listener3.notCalled);
+		t.true(listener4.calledTwice);
+
+		t.end();
+	});
+});
+
+test.cb('generate multiple on for the same event (test with error event)', t => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opt, cl){
+			cl(ct === 'error' ? new Error('error writing file mock') : null);
+		}
+	});
+
+	generate({
+		'/filepath/fake/file1.js': 'error',
+		'/filepath/fake/file2.js': 'fake content 2',
+		'/filepath/fake/file3.js': 'fake content 1',
+		'/filepath/fake/file4.js': 'error'
+	});
+
+	const listener1 = sinon.spy();
+	const listener2 = sinon.spy();
+
+	generate.on('error', listener1);
+	generate.on('error', listener2);
+
+	generate.on('finish', ()=>{
+		t.true(listener1.calledTwice);
+		t.true(listener2.calledTwice);
+
+		t.end();
+	});
+});
+
+test.cb('generate multiple off for the same event (test with error event)', t => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opt, cl){
+			cl(ct === 'error' ? new Error('error writing file mock') : null);
+		}
+	});
+
+	generate({
+		'/filepath/fake/file1.js': 'error',
+		'/filepath/fake/file2.js': 'fake content 2',
+		'/filepath/fake/file3.js': 'fake content 1',
+		'/filepath/fake/file4.js': 'error'
+	});
+
+	const listener1 = sinon.spy();
+	const listener2 = sinon.spy();
+	const listener3 = sinon.spy();
+	const listener4 = sinon.spy();
+
+	generate.on('error', listener1);
+	generate.on('error', listener2);
+	generate.on('error', listener3);
+	generate.on('error', listener4);
+
+	generate.off('error', listener2);
+	generate.off('error', listener3);
+
+	generate.on('finish', ()=>{
+		t.true(listener1.calledTwice);
+		t.true(listener2.notCalled);
+		t.true(listener3.notCalled);
+		t.true(listener4.calledTwice);
+
+		t.end();
+	});
+});
+
+test.todo('generate multiple on for the same listener');
+test.todo('generate multiple off for the same listener');
+
+test.todo('generate multiple on for the same event and listener (test with finish event)');
+test.todo('generate multiple off for the same event and listener (test with finish event)');
+
+test.todo('generate multiple on for the same event and listener (test with write event)');
+test.todo('generate multiple off for the same event and listener (test with write event)');
+
+test.todo('generate multiple on for the same event and listener (test with error event)');
+test.todo('generate multiple off for the same event and listener (test with error event)');
 
 /*-----------------------*/
 
@@ -455,7 +934,11 @@ test.cb('default eventData with finish event', testDirectoryMacro, (t, directory
 			content: fileContent
 		}], ()=>{
 			t.is(typeof event, 'object');
-			t.deepEqual(event, {data: undefined});
+			t.deepEqual(event, {
+				data: undefined,
+				errors: [],
+				success: [filePath]
+			});
 			t.pass();
 			t.end();
 		}, {ava_t: t});
@@ -489,7 +972,11 @@ test.cb('override eventData using the instance generator with finish event', tes
 			content: fileContent
 		}], ()=>{
 			t.is(typeof event, 'object');
-			t.deepEqual(event, {data: 'data as string'});
+			t.deepEqual(event, {
+				data: 'data as string',
+				errors: [],
+				success: [filePath]
+			});
 			t.pass();
 			t.end();
 		});
@@ -524,7 +1011,11 @@ test.cb('override eventData using the generate function with finish event', test
 		}], ()=>{
 			t.is(typeof event, 'object');
 			t.is(event.data, data);
-			t.deepEqual(event, {data: {dataKey: 'data value'}});
+			t.deepEqual(event, {
+				data: {dataKey: 'data value'},
+				errors: [],
+				success: [filePath]
+			});
 			t.pass();
 			t.end();
 		});
@@ -552,6 +1043,8 @@ test.cb('override eventData using the generate function after using the instance
 		eventData: data
 	});
 
+	generate.on('error', () => t.fail());
+
 	generate.on('finish', event=>{
 		t.pass();
 
@@ -561,17 +1054,170 @@ test.cb('override eventData using the generate function after using the instance
 		}], ()=>{
 			t.is(typeof event, 'object');
 			t.is(event.data, data);
-			t.deepEqual(event, {data: 42});
+			t.deepEqual(event, {
+				data: 42,
+				errors: [],
+				success: [filePath]
+			});
 			t.pass();
 			t.end();
 		});
 	});
 });
 
-test.todo('default eventData with write event');
-test.todo('override eventData using the instance generator with write event');
-test.todo('override eventData using the generate function with write event');
-test.todo('override eventData using the generate function after using the instance generator with write event');
+test.cb('default eventData with write event', testDirectoryMacro, (t, directory) => {
+	const generate = requireFromIndex('sources/generate')();
+
+	t.plan(4);
+
+	const filePath = mockGenerateConfigObjectKeyName({
+		depth: 1,
+		absolute: directory.path
+	});
+	const fileContent = mockFileContent();
+
+	generate({
+		[filePath]: fileContent
+	});
+
+	generate.on('error', () => t.fail());
+
+	generate.on('write', event => {
+		t.pass();
+
+		directory.assertAllFilesExist([...directory.initialFilesList, {
+			path: filePath,
+			content: fileContent
+		}], ()=>{
+			t.is(typeof event, 'object');
+			t.deepEqual(event, {
+				data: undefined,
+				filepath: filePath
+			});
+			t.pass();
+			t.end();
+		}, {ava_t: t});
+	});
+});
+
+test.cb('override eventData using the instance generator with write event', testDirectoryMacro, (t, directory) => {
+	const data = 'data as string';
+
+	const generate = requireFromIndex('sources/generate')({
+		eventData: data
+	});
+
+	t.plan(4);
+
+	const filePath = mockGenerateConfigObjectKeyName({
+		depth: 1,
+		absolute: directory.path
+	});
+	const fileContent = mockFileContent();
+
+	generate({
+		[filePath]: fileContent
+	});
+
+	generate.on('error', () => t.fail());
+
+	generate.on('write', event => {
+		t.pass();
+
+		directory.assertAllFilesExist([...directory.initialFilesList, {
+			path: filePath,
+			content: fileContent
+		}], ()=>{
+			t.is(typeof event, 'object');
+			t.deepEqual(event, {
+				data,
+				filepath: filePath
+			});
+			t.pass();
+			t.end();
+		}, {ava_t: t});
+	});
+});
+
+test.cb('override eventData using the generate function with write event', testDirectoryMacro, (t, directory) => {
+	const data = 46;
+
+	const generate = requireFromIndex('sources/generate')();
+
+	t.plan(4);
+
+	const filePath = mockGenerateConfigObjectKeyName({
+		depth: 1,
+		absolute: directory.path
+	});
+	const fileContent = mockFileContent();
+
+	generate({
+		[filePath]: fileContent
+	}, {
+		eventData: data
+	});
+
+	generate.on('error', () => t.fail());
+
+	generate.on('write', event => {
+		t.pass();
+
+		directory.assertAllFilesExist([...directory.initialFilesList, {
+			path: filePath,
+			content: fileContent
+		}], ()=>{
+			t.is(typeof event, 'object');
+			t.deepEqual(event, {
+				data,
+				filepath: filePath
+			});
+			t.pass();
+			t.end();
+		}, {ava_t: t});
+	});
+});
+
+test.cb('override eventData using the generate function after using the instance generator with write event', testDirectoryMacro, (t, directory) => {
+	const data = {dataKey: 'data-value'};
+
+	const generate = requireFromIndex('sources/generate')({
+		eventData: 56
+	});
+
+	t.plan(4);
+
+	const filePath = mockGenerateConfigObjectKeyName({
+		depth: 1,
+		absolute: directory.path
+	});
+	const fileContent = mockFileContent();
+
+	generate({
+		[filePath]: fileContent
+	}, {
+		eventData: data
+	});
+
+	generate.on('error', () => t.fail());
+
+	generate.on('write', event => {
+		t.pass();
+
+		directory.assertAllFilesExist([...directory.initialFilesList, {
+			path: filePath,
+			content: fileContent
+		}], ()=>{
+			t.is(typeof event, 'object');
+			t.deepEqual(event, {
+				data,
+				filepath: filePath
+			});
+			t.pass();
+			t.end();
+		}, {ava_t: t});
+	});
+});
 
 test.todo('default eventData with error event');
 test.todo('override eventData using the instance generator with error event');

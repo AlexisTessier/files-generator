@@ -135,8 +135,8 @@ function generateGenerate({
 
 	let listeners = [];
 
-	function emit(eventToEmit, ...args) {
-		listeners.filter(({event}) => event === eventToEmit).forEach(({listener})=>listener(...args))
+	function emit(eventToEmit, eventObject) {
+		listeners.filter(({event}) => event === eventToEmit).forEach(({listener})=>listener(eventObject));
 	}
 
 	function on(event, listener) {
@@ -201,33 +201,54 @@ function generateGenerate({
 			throw relativeCwdError(cwd);
 		}
 
+		const generateConfigKeys = generateConfig ? Object.keys(generateConfig) : [];
+		const generateConfigKeysCount = generateConfigKeys.length;
+		let fileEventCount = 0;
+		const success = [];
+		const errors = [];
 		const eventObject = {
 			data: eventData
 		};
 
-		process.nextTick(()=>{
-			if (!generateConfig) {
-				return emit('finish', eventObject);
-			}
+		function emitWrite(filepath) {
+			success.push(filepath);
+			emit('write', Object.assign({}, eventObject, {filepath}));
+			fileEventCount++;
+			checkIfFinish();
+		}
 
-			Promise.all(Object.keys(generateConfig).map(filePath => ({
+		function emitError(filepath, error){
+			errors.push(filepath);
+			emit('error', Object.assign({}, eventObject, {filepath, error}));
+			fileEventCount++;
+			checkIfFinish();
+		}
+
+		function checkIfFinish() {
+			if (fileEventCount === generateConfigKeysCount) {
+				emitFinish();
+			}
+		}
+
+		function emitFinish() {
+			emit('finish', Object.assign({}, eventObject, {errors, success}));
+		}
+
+		process.nextTick(()=>{
+			checkIfFinish();
+
+			generateConfigKeys.map(filePath => ({
 				path: filePath,
 				content: generateConfig[filePath]
-			})).map(file => new Promise((resolve, reject) => {
+			})).forEach(file => new Promise((resolve, reject) => {
 
 				const fileContent = file.content;
 				function writeFilehandler(err, filepath){
 					if (err) {
-						reject(new Error(
-							`Error writing file at path "${filepath}" => ${err.message}`
-						));
+						emitError(filepath, err);
 					}
 					else{
-						emit('write', Object.assign({}, eventObject, {
-							filepath
-						}));
-
-						resolve();
+						emitWrite(filepath);
 					}
 				}
 
@@ -237,29 +258,37 @@ function generateGenerate({
 					cwd
 				};
 
-				if (fileContent instanceof UseObject) {
-					const fileContentOptions = fileContent.options || {};
-					const filePathWriteFile = (fileContentOptions.writeFile || writeFile);
-					const filePathCwd = (fileContentOptions.cwd || cwd);
-					const absolutePath = relativeToAbsolute(filePathCwd, file.path);
+				let absolutePath = null;
 
-					filePathWriteFile(absolutePath, fileContent.content,
-						Object.assign({}, filePathOptions, fileContentOptions),
-						err => writeFilehandler(err, absolutePath)
-					);
-				}
-				else if(typeof fileContent === 'string'){
-					const absolutePath = relativeToAbsolute(cwd, file.path);
+				try{
+					if (fileContent instanceof UseObject) {
+						const fileContentOptions = fileContent.options || {};
+						const filePathWriteFile = (fileContentOptions.writeFile || writeFile);
+						const filePathCwd = (fileContentOptions.cwd || cwd);
+						absolutePath = relativeToAbsolute(filePathCwd, file.path);
 
-					writeFile(absolutePath, fileContent, filePathOptions,
-						err => writeFilehandler(err, absolutePath)
-					);
+						filePathWriteFile(absolutePath, fileContent.content,
+							Object.assign({}, filePathOptions, fileContentOptions),
+							err => writeFilehandler(err, absolutePath)
+						);
+					}
+					else{
+						absolutePath = relativeToAbsolute(cwd, file.path);
+
+						if(typeof fileContent === 'string'){
+							writeFile(absolutePath, fileContent, filePathOptions,
+								err => writeFilehandler(err, absolutePath)
+							);
+						}
+						else{
+							throw new Error(`File content of type "${typeof fileContent}" is not a content type handled by files-generator.`);
+						}
+					}
 				}
-			}))).then(() => {
-				emit('finish', eventObject);
-			}).catch(error => {
-				emit('error', Object.assign({}, eventObject, {error}));
-			});
+				catch(err){
+					emitError(absolutePath, err);
+				}
+			}));
 		});
 	}
 

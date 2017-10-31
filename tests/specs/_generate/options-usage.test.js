@@ -171,7 +171,11 @@ test.cb('generate.use() simple string as content - override encoding', generateM
 		t.true(writeFile.withArgs(filePath2, fileContent2).calledOnce);
 		writeFileCallExpectOptionsMacro(t, writeFile, 1, { encoding });
 
-		t.deepEqual(event, {data: undefined});
+		t.deepEqual(event, {
+			data: undefined,
+			errors: [],
+			success: [filePath1, filePath2]
+		});
 		t.end();
 	});
 });
@@ -296,7 +300,11 @@ test.cb('generate.use() simple string as content - override cwd', generateMockin
 		const expectedPath = path.join(cwd, filePath);
 		t.true(writeFile.withArgs(expectedPath, fileContent).calledOnce);
 
-		t.deepEqual(event, {data: undefined});
+		t.deepEqual(event, {
+			data: undefined,
+			errors: [],
+			success: [path.join(cwd, filePath)]
+		});
 
 		t.end();
 	});
@@ -437,7 +445,11 @@ test.cb('generate.use() simple string as content - override writeFile', generate
 		t.true(writeFile.withArgs(filePath1, fileContent1).calledOnce);
 		t.true(writeFileBis.withArgs(filePath2, fileContent2).calledOnce);
 
-		t.deepEqual(event, {data: undefined});
+		t.deepEqual(event, {
+			data: undefined,
+			errors: [],
+			success: [filePath1, filePath2]
+		});
 
 		t.end();
 	});
