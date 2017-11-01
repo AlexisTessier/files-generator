@@ -240,8 +240,7 @@ function generateGenerate({
 			generateConfigKeys.map(filePath => ({
 				path: filePath,
 				content: generateConfig[filePath]
-			})).forEach(file => new Promise((resolve, reject) => {
-
+			})).forEach(file => {
 				const fileContent = file.content;
 				function writeFilehandler(err, filepath){
 					if (err) {
@@ -262,7 +261,7 @@ function generateGenerate({
 
 				try{
 					if (fileContent instanceof UseObject) {
-						const fileContentOptions = fileContent.options || {};
+						const fileContentOptions = fileContent.options;
 						const filePathWriteFile = (fileContentOptions.writeFile || writeFile);
 						const filePathCwd = (fileContentOptions.cwd || cwd);
 						absolutePath = relativeToAbsolute(filePathCwd, file.path);
@@ -288,7 +287,7 @@ function generateGenerate({
 				catch(err){
 					emitError(absolutePath, err);
 				}
-			}));
+			});
 		});
 	}
 

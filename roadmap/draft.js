@@ -346,6 +346,8 @@ generate({
 })
 
 const availableOptions = {
+	watch,
+	eventData,
 	writeFile,
 	encoding,
 	cwd: process.cwd(),
@@ -354,23 +356,3 @@ const availableOptions = {
 	backupStrategy: [false, null, 'trash', 'backup-file', function customStrategy(){}],
 	backupStrategyOptions: {}
 };
-
-generate.on('source', filePath => {
-
-});
-
-generate.on('write', filePath => {
-
-});
-
-generate.on('remove', filePath => {
-
-});
-
-generate.on('finish', (err, filesPaths) => {
-
-});
-
-generate.on('error', (err, filePath) => {
-
-});
