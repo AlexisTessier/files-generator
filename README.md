@@ -29,16 +29,11 @@ A tool to generate bunch of files, using different kinds of content definition a
 const generate = require('files-generator')();
 
 generate({
-  'path/to/file': 'file-content',
-  'path/to/file2': generate.copy('path/to/original/file'),
-  'path/to/file3': new Promise(resolve => resolve('async-file-content')) 
-}).then(generatedFiles => {
-  console.log(generatedFiles)
-  // {
-  //    'path/to/file': 'file-content',
-  //    'path/to/file2': 'original-file-content',
-  //    'path/to/file3': 'async-file-content'
-  // }
+  'path/to/file': 'file content',
+  'path/to/file2': generate.use('other file content')
+});
+generate.on('finish', event => {
+  console.log(event.success); // ["path/to/file", "path/to/file2"]
 })
 ```
 
