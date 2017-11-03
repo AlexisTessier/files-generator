@@ -941,7 +941,7 @@ test.cb('generate multiple on for the same listener', t => {
 	});
 });
 
-test.skip('generate multiple off for the same listener', t => {
+test.cb('generate multiple off for the same listener', t => {
 	const generate = requireFromIndex('sources/generate')({
 		writeFile(fp, ct, opt, cl){
 			cl(ct === 'error' ? new Error('error writing file mock') : null);
@@ -950,10 +950,7 @@ test.skip('generate multiple off for the same listener', t => {
 
 	generate({
 		'/filepath/fake/file1.js': 'error',
-		'/filepath/fake/file2.js': 'fake content 2',
-		'/filepath/fake/file3.js': 'fake content 1',
-		'/filepath/fake/file4.js': 'error',
-		'/filepath/fake/file5.js': 'error'
+		'/filepath/fake/file2.js': 'content'
 	});
 
 	const listener = sinon.spy();
@@ -961,16 +958,216 @@ test.skip('generate multiple off for the same listener', t => {
 	generate.on('write', listener);
 	generate.on('error', listener);
 	generate.on('finish', listener);
+
+	generate.off('write', listener);
+	generate.off('error', listener);
+	generate.off('finish', listener);
+
+	generate.on('finish', () => {
+		t.is(listener.callCount, 0);
+
+		t.end();
+	});
 });
 
-test.todo('generate multiple on for the same event and listener (test with finish event)');
-test.todo('generate multiple off for the same event and listener (test with finish event)');
+test('generate multiple on for the same event and listener (test with finish event)', t => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opt, cl){
+			cl(null);
+		}
+	});
 
-test.todo('generate multiple on for the same event and listener (test with write event)');
-test.todo('generate multiple off for the same event and listener (test with write event)');
+	generate({
+		'/filepath/fake/file.txt': 'content'
+	});
 
-test.todo('generate multiple on for the same event and listener (test with error event)');
-test.todo('generate multiple off for the same event and listener (test with error event)');
+	const listener = sinon.spy();
+
+	generate.on('error', ()=>t.fail());
+
+	generate.on('finish', listener);
+
+	const listenerUsedTwiceForSameEventError = t.throws(() => {
+		generate.on('finish', listener);
+	});
+
+	t.is(listenerUsedTwiceForSameEventError.message, `The same listener is used twice on the event "finish".`);
+});
+
+test('generate multiple on for the same event and listener (test with write event)', t => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opt, cl){
+			cl(null);
+		}
+	});
+
+	generate({
+		'/filepath/fake/file.txt': 'content'
+	});
+
+	const listener = sinon.spy();
+
+	generate.on('error', ()=>t.fail());
+
+	generate.on('write', listener);
+
+	const listenerUsedTwiceForSameEventError = t.throws(() => {
+		generate.on('write', listener);
+	});
+
+	t.is(listenerUsedTwiceForSameEventError.message, `The same listener is used twice on the event "write".`);
+});
+
+test('generate multiple on for the same event and listener (test with error event)', t => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opt, cl){
+			cl(null);
+		}
+	});
+
+	generate({
+		'/filepath/fake/file.txt': 'content'
+	});
+
+	const listener = sinon.spy();
+
+	generate.on('error', listener);
+
+	const listenerUsedTwiceForSameEventError = t.throws(() => {
+		generate.on('error', listener);
+	});
+
+	t.is(listenerUsedTwiceForSameEventError.message, `The same listener is used twice on the event "error".`);
+});
+
+test('generate off on unlistened listener (test with finish event)', t => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opt, cl){
+			cl(null);
+		}
+	});
+
+	generate({
+		'/filepath/fake/file.txt': 'content'
+	});
+
+	const listener = sinon.spy();
+
+	const listenerUsedTwiceForSameEventError = t.throws(() => {
+		generate.off('finish', listener);
+	});
+
+	t.is(listenerUsedTwiceForSameEventError.message, `generate.off called with an unregistered listener on "finish".`);
+});
+
+test('generate off on unlistened listener (test with write event)', t => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opt, cl){
+			cl(null);
+		}
+	});
+
+	generate({
+		'/filepath/fake/file.txt': 'content'
+	});
+
+	const listener = sinon.spy();
+
+	const listenerUsedTwiceForSameEventError = t.throws(() => {
+		generate.off('write', listener);
+	});
+
+	t.is(listenerUsedTwiceForSameEventError.message, `generate.off called with an unregistered listener on "write".`);
+});
+
+test('generate off on unlistened listener (test with error event)', t => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opt, cl){
+			cl(null);
+		}
+	});
+
+	generate({
+		'/filepath/fake/file.txt': 'content'
+	});
+
+	const listener = sinon.spy();
+
+	const listenerUsedTwiceForSameEventError = t.throws(() => {
+		generate.off('error', listener);
+	});
+
+	t.is(listenerUsedTwiceForSameEventError.message, `generate.off called with an unregistered listener on "error".`);
+});
+
+test('generate multiple off for the same event and listener (test with finish event)', t => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opt, cl){
+			cl(null);
+		}
+	});
+
+	generate({
+		'/filepath/fake/file.txt': 'content'
+	});
+
+	const listener = sinon.spy();
+
+	generate.on('finish', listener);
+	generate.off('finish', listener);
+
+	const listenerUsedTwiceForSameEventError = t.throws(() => {
+		generate.off('finish', listener);
+	});
+
+	t.is(listenerUsedTwiceForSameEventError.message, `generate.off called with an unregistered listener on "finish".`);
+});
+
+test('generate multiple off for the same event and listener (test with write event)', t => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opt, cl){
+			cl(null);
+		}
+	});
+
+	generate({
+		'/filepath/fake/file.txt': 'content'
+	});
+
+	const listener = sinon.spy();
+
+	generate.on('write', listener);
+	generate.off('write', listener);
+
+	const listenerUsedTwiceForSameEventError = t.throws(() => {
+		generate.off('write', listener);
+	});
+
+	t.is(listenerUsedTwiceForSameEventError.message, `generate.off called with an unregistered listener on "write".`);
+});
+
+test('generate multiple off for the same event and listener (test with error event)', t => {
+	const generate = requireFromIndex('sources/generate')({
+		writeFile(fp, ct, opt, cl){
+			cl(null);
+		}
+	});
+
+	generate({
+		'/filepath/fake/file.txt': 'content'
+	});
+
+	const listener = sinon.spy();
+
+	generate.on('error', listener);
+	generate.off('error', listener);
+
+	const listenerUsedTwiceForSameEventError = t.throws(() => {
+		generate.off('error', listener);
+	});
+
+	t.is(listenerUsedTwiceForSameEventError.message, `generate.off called with an unregistered listener on "error".`);
+});
 
 /*-----------------------*/
 

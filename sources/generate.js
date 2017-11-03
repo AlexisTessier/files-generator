@@ -139,9 +139,14 @@ function generateGenerate({
 		listeners.filter(({event}) => event === eventToEmit).forEach(({listener})=>listener(eventObject));
 	}
 
+	function inListeners(event, listener) {
+		return listeners.filter(l => l.event === event && l.listener === listener).length > 0;
+	}
+
 	function on(event, listener) {
 		nativeAssert(listenableEvents.includes(event), notListenableEventErrorMessage);
 		nativeAssert(typeof listener === 'function', unvalidListenerErrorMessage);
+		nativeAssert(!inListeners(event, listener), `The same listener is used twice on the event "${event}".`);
 
 		listeners.push({event, listener});
 	}
@@ -149,6 +154,7 @@ function generateGenerate({
 	function off(eventToUnbind, listenerToUnbind) {
 		nativeAssert(listenableEvents.includes(eventToUnbind), notListenableEventErrorMessage);
 		nativeAssert(typeof listenerToUnbind === 'function', unvalidListenerErrorMessage);
+		nativeAssert(inListeners(eventToUnbind, listenerToUnbind), `generate.off called with an unregistered listener on "${eventToUnbind}".`);
 
 		listeners = listeners.filter(({event, listener}) => {
 			if (event === eventToUnbind) {

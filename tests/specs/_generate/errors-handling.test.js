@@ -1,9 +1,11 @@
 'use strict';
 
 const test = require('ava');
+const sinon = require('sinon');
 
 const msg = require('@alexistessier/msg');
 
+const pathFromIndex = require('../../utils/path-from-index');
 const requireFromIndex = require('../../utils/require-from-index');
 
 const loggable = require('../../utils/loggable');
@@ -13,6 +15,10 @@ const mockFileContent = require('../../mocks/mock-file-content');
 const mockWriteFile = require('../../mocks/mock-write-file');
 
 const generateMockingWriteFileMacro = require('./generate-mocking-write-file.macro');
+const testDirectoryMacro = require('./test-directory.macro');
+
+const fs = require('fs');
+const path = require('path');
 
 /*-------------------------*/
 
@@ -186,6 +192,46 @@ test('generate.use() simple string as content - trying to override eventData eve
 		`the eventData option with the value undefined (undefined).`,
 		`This will not work. It's not possible.`
 	));
+});
+
+test.cb('Error from mkdirp handling', t => {
+	const generate = requireFromIndex('sources/generate')();
+
+	const directory = pathFromIndex('tests/mocks/unwritable-dir');
+
+	fs.chmodSync(directory, '0444');
+
+	const filePath = path.join(directory, 'subdir/deepSubDir/deepFile.txt');
+	generate({
+		[filePath]: 'text content'
+	});
+
+	generate.on('write', ()=>t.fail());
+
+	const errorListener = sinon.spy();
+	generate.on('error', errorListener);
+
+	generate.on('finish', event => {
+		t.deepEqual(event, {
+			data: undefined,
+			errors: [filePath],
+			success: []
+		});
+
+		t.true(errorListener.calledOnce);
+		const call = errorListener.getCall(0).args;
+		t.is(call.length, 1);
+		const eventError = call[0];
+		t.deepEqual(Object.keys(eventError).sort(), ['data', 'error', 'filepath']);
+		t.is(eventError.data, undefined);
+		t.is(eventError.filepath, filePath);
+		t.true(eventError.error instanceof Error);
+		t.true(eventError.error.message.indexOf('EACCES') >= 0);
+
+		fs.chmodSync(directory, '0777');
+
+		t.end();
+	});
 });
 
 test.todo('handle wrong args types');
